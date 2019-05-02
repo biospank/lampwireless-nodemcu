@@ -1,13 +1,16 @@
 -- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi
 
 --init.lua
+redLedPin = 5
 greenLedPin = 7
 buttonPin = 3
 relayPin = 6
 
+gpio.mode(redLedPin, gpio.OUTPUT)
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
 gpio.mode(relayPin, gpio.OUTPUT)
+gpio.write(redLedPin, gpio.LOW)
 
 cnt = 0
 

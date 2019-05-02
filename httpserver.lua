@@ -1,11 +1,48 @@
-function turnRelayOn(params)
+redLedTick = tmr.create()
+
+function turnAlertOn()
+  local ledState = gpio.LOW
+
+  running, mode = redLedTick:state()
+
+  if not running then
+    redLedTick:alarm(500, tmr.ALARM_AUTO, function()
+      if ledState == gpio.LOW then
+        ledState = gpio.HIGH
+      else
+        ledState = gpio.LOW
+      end
+
+      gpio.write(redLedPin, ledState)
+    end)
+  end
+end
+
+function turnAlertOff()
+  running, mode = redLedTick:state()
+
+  if running then
+    redLedTick:stop()
+    gpio.write(redLedPin, gpio.LOW)
+  end
+end
+
+function turnRelayOn(vars, alert)
   print("Turning on gpio 2..")
+
+  local params = collectQueryStringParams(vars)
 
   gpio.write(relayPin, gpio.HIGH)
 
   tmr.create():alarm(tonumber((params.delay) or 5000), tmr.ALARM_SINGLE, function()
     print("Turning off gpio 2..")
     gpio.write(relayPin, gpio.LOW)
+
+    print("alert " .. tostring(alert))
+
+    if alert then
+      turnAlertOn()
+    end
   end)
 end
 
@@ -42,9 +79,16 @@ srv:listen(80, function(conn)
       return
     end
 
+    if url == "test" then
+      turnRelayOn(vars, false)
+    end
+
     if url == "notify" then
-      local params = collectQueryStringParams(vars)
-      turnRelayOn(params)
+      turnRelayOn(vars, true)
+    end
+
+    if url == "alertoff" then
+      turnAlertOff()
     end
 
     conn:send("HTTP/1.1 200 OK\r\n\r\n")
