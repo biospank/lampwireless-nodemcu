@@ -1,4 +1,5 @@
 redLedTick = tmr.create()
+relayTick = tmr.create()
 
 function turnAlertOn()
   local ledState = gpio.LOW
@@ -31,19 +32,36 @@ function turnRelayOn(vars, alert)
   print("Turning on gpio 2..")
 
   local params = collectQueryStringParams(vars)
+  local times = tonumber((params.delay) or 5000) * 2 / 1000
+  local ledState = gpio.LOW
+  local running, mode = relayTick:state()
+  local cnt = 0
 
-  gpio.write(relayPin, gpio.HIGH)
+  if not running then
+    relayTick:alarm(500, tmr.ALARM_AUTO, function()
+      cnt = cnt + 1
 
-  tmr.create():alarm(tonumber((params.delay) or 5000), tmr.ALARM_SINGLE, function()
-    print("Turning off gpio 2..")
-    gpio.write(relayPin, gpio.LOW)
+      if cnt < times then
+        if ledState == gpio.LOW then
+          ledState = gpio.HIGH
+        else
+          ledState = gpio.LOW
+        end
 
-    print("alert " .. tostring(alert))
+        gpio.write(relayPin, ledState)
+      else
+        print("Turning off gpio 2..")
+        relayTick:stop()
+        gpio.write(relayPin, gpio.LOW)
 
-    if alert then
-      turnAlertOn()
-    end
-  end)
+        print("alert " .. tostring(alert))
+
+        if alert then
+          turnAlertOn()
+        end
+      end
+    end)
+  end
 end
 
 function collectQueryStringParams(vars)

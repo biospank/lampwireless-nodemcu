@@ -57,7 +57,7 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
   else
     connTick:stop()
     bootLedTick:stop()
-    gpio.write(greenLedPin, gpio.LOW)
+    gpio.write(greenLedPin, gpio.HIGH)
     print("Connected to wifi as: " .. wifi.sta.getip())
     dofile("mdnservice.lua") -- expose mdn service
     dofile("httpserver.lua") -- start http server

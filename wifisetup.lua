@@ -6,7 +6,7 @@ enduser_setup.start(
     ssid, pwd, _bssid = wifi.sta.getconfig(false)
 
     bootLedTick:stop()
-    gpio.write(greenLedPin, gpio.HIGH)
+    gpio.write(greenLedPin, gpio.LOW)
 
     print("Restarting device...")
     tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
