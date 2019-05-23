@@ -1,21 +1,33 @@
 redLedTick = tmr.create()
 relayTick = tmr.create()
 
-function turnAlertOn()
-  local ledState = gpio.LOW
+-- PWM
+curDuty = 0 -- low brightness
+direction = 1 -- increasing, because we are starting at low
 
+function fadeLED()
+  if curDuty >= 1023 then
+     direction = 0
+  elseif curDuty <= 10 then
+     direction = 1
+  end
+
+  if direction == 0 then
+     curDuty = curDuty - 1
+  elseif direction == 1 then
+     curDuty = curDuty + 1
+  else
+     --should never be reached!
+     curDuty = 0
+  end
+  pwm.setduty(redLedPin, curDuty)
+end
+
+function turnAlertOn()
   running, mode = redLedTick:state()
 
   if not running then
-    redLedTick:alarm(500, tmr.ALARM_AUTO, function()
-      if ledState == gpio.LOW then
-        ledState = gpio.HIGH
-      else
-        ledState = gpio.LOW
-      end
-
-      gpio.write(redLedPin, ledState)
-    end)
+    redLedTick:alarm(1, tmr.ALARM_AUTO, fadeLED)
   end
 end
 
@@ -24,7 +36,8 @@ function turnAlertOff()
 
   if running then
     redLedTick:stop()
-    gpio.write(redLedPin, gpio.LOW)
+    pwm.setduty(redLedPin, 0)
+    curDuty = 0
   end
 end
 

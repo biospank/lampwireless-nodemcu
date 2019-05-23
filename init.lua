@@ -6,11 +6,11 @@ greenLedPin = 7
 buttonPin = 3
 relayPin = 6
 
-gpio.mode(redLedPin, gpio.OUTPUT)
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
 gpio.mode(relayPin, gpio.OUTPUT)
-gpio.write(redLedPin, gpio.LOW)
+pwm.setup(redLedPin, 1000, 0) -- we are using 1000Hz
+pwm.start(redLedPin)
 
 cnt = 0
 
