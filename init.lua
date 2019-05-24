@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm
 
 --init.lua
 redLedPin = 5

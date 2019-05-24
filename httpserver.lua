@@ -38,6 +38,7 @@ function turnAlertOff()
     redLedTick:stop()
     pwm.setduty(redLedPin, 0)
     curDuty = 0
+    direction = 1
   end
 end
 
