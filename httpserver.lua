@@ -4,25 +4,32 @@ relayTick = tmr.create()
 -- PWM
 curDuty = 0 -- low brightness
 direction = 1 -- increasing, because we are starting at low
-sleep = 700 -- time to keep led off
+sleep = 1000 -- time to keep led off
+keep = 700 -- time to keep led on
 
 function fadeLED()
-  if curDuty >= 1022 then
+  if curDuty >= 1022 and keep <= 0 then
+    curDuty = 1022
     direction = 0
+    keep = 700
   elseif curDuty <= 0 and sleep <= 0 then
     curDuty = 0
     direction = 1
-    sleep = 800
+    sleep = 1000
   end
 
   if direction == 0 then
     if curDuty <= 0 then
       sleep = sleep - 1
     else
-      curDuty = curDuty - 1
+      curDuty = curDuty - 2
     end
   elseif direction == 1 then
-     curDuty = curDuty + 2
+    if curDuty >= 1022 then
+      keep = keep - 1
+    else
+      curDuty = curDuty + 2
+    end
   else
      --should never be reached!
      curDuty = 0
