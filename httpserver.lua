@@ -52,6 +52,8 @@ function turnAlertOff()
   if running then
     rgbLedTick:stop()
     pwm.setduty(rRgbLedPin, 1023)
+    pwm.setduty(gRgbLedPin, 1023)
+    pwm.setduty(bRgbLedPin, 1023)
   end
 end
 
