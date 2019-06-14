@@ -1,7 +1,9 @@
 -- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm
 
 --init.lua
-redLedPin = 5
+rRgbLedPin = 5
+gRgbLedPin = 1
+bRgbLedPin = 2
 greenLedPin = 7
 buttonPin = 3
 relayPin = 6
@@ -9,8 +11,12 @@ relayPin = 6
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
 gpio.mode(relayPin, gpio.OUTPUT)
-pwm.setup(redLedPin, 1000, 0) -- we are using 1000Hz
-pwm.start(redLedPin)
+pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
+pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
+pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
+pwm.start(rRgbLedPin)
+pwm.start(gRgbLedPin)
+pwm.start(bRgbLedPin)
 
 cnt = 0
 

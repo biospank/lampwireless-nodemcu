@@ -1,58 +1,57 @@
-redLedTick = tmr.create()
+rgbLedTick = tmr.create()
 relayTick = tmr.create()
+red, green, blue = nil
 
--- PWM
-curDuty = 0 -- low brightness
-direction = 1 -- increasing, because we are starting at low
-sleep = 1000 -- time to keep led off
-keep = 700 -- time to keep led on
+function turnAlertOn(params, temporary)
+  local ledState = gpio.LOW
+  local count = 0
+  local running, mode = rgbLedTick:state()
 
-function fadeLED()
-  if curDuty >= 1022 and keep <= 0 then
-    curDuty = 1022
-    direction = 0
-    keep = 700
-  elseif curDuty <= 0 and sleep <= 0 then
-    curDuty = 0
-    direction = 1
-    sleep = 1000
-  end
+  red = params.r
+  green = params.g
+  blue = params.b
 
-  if direction == 0 then
-    if curDuty <= 0 then
-      sleep = sleep - 1
-    else
-      curDuty = curDuty - 2
-    end
-  elseif direction == 1 then
-    if curDuty >= 1022 then
-      keep = keep - 1
-    else
-      curDuty = curDuty + 2
-    end
-  else
-     --should never be reached!
-     curDuty = 0
-  end
-  pwm.setduty(redLedPin, curDuty)
-end
-
-function turnAlertOn()
-  running, mode = redLedTick:state()
+  -- print("Red: " .. red)
+  -- print("Green: " .. green)
+  -- print("Blue: " .. blue)
 
   if not running then
-    redLedTick:alarm(1, tmr.ALARM_AUTO, fadeLED)
+    rgbLedTick:alarm(500, tmr.ALARM_AUTO, function()
+      if temporary and count > 6 then
+        turnAlertOff()
+      end
+
+      count = count + 1
+
+      if ledState == gpio.LOW then
+        ledState = gpio.HIGH
+      else
+        ledState = gpio.LOW
+      end
+
+      if ledState == gpio.HIGH then
+        pwm.setduty(rRgbLedPin, 1023 - red)
+        pwm.setduty(gRgbLedPin, 1023 - green)
+        pwm.setduty(bRgbLedPin, 1023 - blue)
+      else
+        pwm.setduty(rRgbLedPin, 1023)
+        pwm.setduty(gRgbLedPin, 1023)
+        pwm.setduty(bRgbLedPin, 1023)
+      end
+    end)
+  else
+    if temporary then
+      turnAlertOff()
+    end
   end
 end
 
 function turnAlertOff()
-  running, mode = redLedTick:state()
+  running, mode = rgbLedTick:state()
 
   if running then
-    redLedTick:stop()
-    pwm.setduty(redLedPin, 0)
-    curDuty = 0
-    direction = 1
+    rgbLedTick:stop()
+    pwm.setduty(rRgbLedPin, 1023)
   end
 end
 
@@ -85,7 +84,7 @@ function turnRelayOn(vars, alert)
         print("alert " .. tostring(alert))
 
         if alert then
-          turnAlertOn()
+          turnAlertOn(params, false)
         end
       end
     end)
@@ -120,21 +119,18 @@ srv:listen(80, function(conn)
       print("vars: " .. vars)
     end
 
-    if url == "favicon.ico" then
-      conn:send("HTTP/1.1 404 file not found")
-      return
-    end
-
     if url == "test" then
       turnRelayOn(vars, false)
-    end
-
-    if url == "notify" then
+    elseif url == "ping" then
+    elseif url == "testalert" then
+      turnAlertOn(collectQueryStringParams(vars), true)
+    elseif url == "notify" then
       turnRelayOn(vars, true)
-    end
-
-    if url == "alertoff" then
+    elseif url == "alertoff" then
       turnAlertOff()
+    else
+      conn:send("HTTP/1.1 404 file not found")
+      return
     end
 
     conn:send("HTTP/1.1 200 OK\r\n\r\n")
