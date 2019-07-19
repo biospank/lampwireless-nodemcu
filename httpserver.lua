@@ -57,7 +57,7 @@ function turnAlertOff()
   end
 end
 
-function turnRelayOn(vars, alert)
+function turnRelayOn(vars)
   print("Turning on gpio 2..")
 
   local params = collectQueryStringParams(vars)
@@ -83,9 +83,9 @@ function turnRelayOn(vars, alert)
         relayTick:stop()
         gpio.write(relayPin, gpio.LOW)
 
-        print("alert " .. tostring(alert))
+        print("alert " .. params.alert)
 
-        if alert then
+        if params.alert == "true" then
           turnAlertOn(params, false)
         end
       end
@@ -121,17 +121,15 @@ srv:listen(80, function(conn)
       print("vars: " .. vars)
     end
 
-    if url == "test" then
-      turnRelayOn(vars, false)
-    elseif url == "ping" then
+    if url == "ping" then
+    elseif url == "notify" then
+      turnRelayOn(vars)
     elseif url == "testalert" then
       turnAlertOn(collectQueryStringParams(vars), true)
-    elseif url == "notify" then
-      turnRelayOn(vars, true)
     elseif url == "alertoff" then
       turnAlertOff()
     else
-      conn:send("HTTP/1.1 404 file not found")
+      conn:send("HTTP/1.1 404 resource not found")
       return
     end
 
