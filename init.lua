@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,PWS
 
 --init.lua
 rRgbLedPin = 5
@@ -18,8 +18,6 @@ pwm.start(rRgbLedPin)
 pwm.start(gRgbLedPin)
 pwm.start(bRgbLedPin)
 
-cnt = 0
-
 -- define a callback function
 function buttonCb()
   print("Resetting device...")
@@ -31,7 +29,6 @@ end
 -- that means, what's registered here is executed upon button event "up"
 gpio.trig(buttonPin, "up", buttonCb)
 
-print("Starting SmartRx...")
 print("Connecting to wifi...")
 
 local connTick = tmr.create()
@@ -49,16 +46,16 @@ bootLedTick:alarm(500, tmr.ALARM_AUTO, function()
   gpio.write(greenLedPin, ledState)
 end)
 
+local cnt = 0
+
 connTick:alarm(500, tmr.ALARM_AUTO, function()
   if wifi.sta.getip() == nil then
     cnt = cnt + 1
     print(cnt .. " attempt...") -- waiting for ip
     if cnt == 20 then
       connTick:stop()
-      -- bootLedTick:stop()
-      -- gpio.write(greenLedPin, gpio.HIGH)
-      print("Entering wifi setup...")
-      dofile("wifisetup.lua")
+      print("Entering wps setup...")
+      dofile("wpssetup.lua")
     end
   else
     connTick:stop()

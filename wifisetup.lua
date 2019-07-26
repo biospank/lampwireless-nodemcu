@@ -1,14 +1,30 @@
 -- wifisetup.lua
 
+function activateWifiLed(active)
+  if active then
+    pwm.setduty(rRgbLedPin, 0)
+    pwm.setduty(gRgbLedPin, 1023)
+    pwm.setduty(bRgbLedPin, 1023)
+  else
+    pwm.setduty(rRgbLedPin, 1023)
+    pwm.setduty(gRgbLedPin, 1023)
+    pwm.setduty(bRgbLedPin, 1023)
+  end
+end
+
+activateWifiLed(true)
+bootLedTick:start()
+
 enduser_setup.start(
   function()
-    print("Connection successful: " .. wifi.sta.getip())
+    print("enduser_setup: Connection successful: " .. wifi.sta.getip())
     ssid, pwd, _bssid = wifi.sta.getconfig(false)
 
     bootLedTick:stop()
     gpio.write(greenLedPin, gpio.LOW)
+    activateWifiLed(false)
 
-    print("Restarting device...")
+    print("enduser_setup: Restarting device...")
     tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
       wifi.setmode(wifi.STATION);
       wifi.sta.config({ssid = ssid, pwd = pwd, save = true});
