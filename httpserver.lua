@@ -93,6 +93,12 @@ function turnRelayOn(vars)
   end
 end
 
+function softReset()
+  tmr.create():alarm(1000, tmr.ALARM_SINGLE, function()
+    node.restart()
+  end)
+end
+
 function collectQueryStringParams(vars)
   local _GET = {}
   if (vars ~= nil) then
@@ -128,6 +134,8 @@ srv:listen(80, function(conn)
       turnAlertOn(collectQueryStringParams(vars), true)
     elseif url == "alertoff" then
       turnAlertOff()
+    elseif url == "reset" then
+      softReset()
     else
       conn:send("HTTP/1.1 404 resource not found")
       return
