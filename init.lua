@@ -2,11 +2,11 @@
 
 --init.lua
 rRgbLedPin = 5
-gRgbLedPin = 1
+gRgbLedPin = 6
 bRgbLedPin = 2
 greenLedPin = 7
 buttonPin = 3
-relayPin = 6
+relayPin = 1
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
