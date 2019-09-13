@@ -1,0 +1,369 @@
+--[[
+
+    Original work Copyright (c) 2015 Frank Edelhaeuser
+    Modified work Copyright (c) 2017 Uday G
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+]]--
+
+local mdnsclient = {}
+do
+
+local function mdns_make_query(service)
+    -- header: transaction id, flags, qdcount, ancount, nscount, nrcount
+    local data = '\000\000'..'\000\000'..'\000\001'..'\000\000'..'\000\000'..'\000\000'
+    -- question section: qname, qtype, qclass
+    for n in service:gfind('([^\.]+)') do
+        data = data..string.char(#n)..n
+    end
+    return data..string.char(0)..'\000\012'..'\000\001'
+end
+
+local function mdns_parse(service, data, answers)
+
+    --- Helper function: parse DNS name field, supports pointers
+    -- @param data     received datagram
+    -- @param offset    offset within datagram (1-based)
+    -- @return  parsed name
+    -- @return  offset of first byte behind name (1-based)
+    local function parse_name(data, offset)
+        local n,d,l = '', '', data:byte(offset)
+        while (l > 0) do
+            if (l >= 192) then -- pointer
+                local p = (l % 192) * 256 + data:byte(offset + 1)
+                return n..d..parse_name(data, p + 1), offset + 2
+            end
+            n = n..d..data:sub(offset + 1, offset + l)
+            offset = offset + l + 1
+            l = data:byte(offset)
+            d = '.'
+        end
+        return n, offset + 1
+    end
+
+    --- Helper function: check if a single bit is set in a number
+    -- @param val       number
+    -- @param mask      mask (single bit only)
+    -- @return  true if bit is set, false if not
+    local function bit_set(val, mask)
+        return val % (mask + mask) >= mask
+    end
+
+    -- decode and check header
+    if (not data) then
+        return nil, 'no data'
+    end
+    local len = #data
+    if (len < 12) then
+        return nil, 'truncated'
+    end
+
+    local header = {
+        id = data:byte(1) * 256 + data:byte(2),
+        flags = data:byte(3) * 256 + data:byte(4),
+        qdcount = data:byte(5) * 256 + data:byte(6),
+        ancount = data:byte(7) * 256 + data:byte(8),
+        nscount = data:byte(9) * 256 + data:byte(10),
+        arcount = data:byte(11) * 256 + data:byte(12),
+    }
+    if (not bit_set(header.flags, 0x8000)) then
+        return nil, 'not a reply'
+    end
+    if (bit_set(header.flags, 0x0200)) then
+        return nil, 'TC bit is set'
+    end
+    if (header.ancount == 0) then
+        return nil, 'no answer records'
+    end
+
+    -- skip question section
+    local name
+    local offset = 13
+    if (header.qdcount > 0) then
+        for i=1, header.qdcount do
+            if (offset > len) then
+                return nil, 'truncated'
+            end
+            name, offset = parse_name(data, offset)
+            offset = offset + 4
+        end
+    end
+
+    -- evaluate answer section
+    for i=1, header.ancount do
+        if (offset > len) then
+            return nil, 'truncated'
+        end
+
+        name, offset = parse_name(data, offset)
+        local type = data:byte(offset + 0) * 256 + data:byte(offset + 1)
+        local rdlength = data:byte(offset + 8) * 256 + data:byte(offset + 9)
+        local rdoffset = offset + 10
+
+        -- A record (IPv4 address)
+        if (type == 1) then
+            if (rdlength ~= 4) then
+                return nil, 'bad RDLENGTH with A record'
+            end
+            answers.a[name] = string.format('%d.%d.%d.%d', data:byte(rdoffset + 0), data:byte(rdoffset + 1), data:byte(rdoffset + 2), data:byte(rdoffset + 3))
+        end
+
+        -- PTR record (pointer)
+        if (type == 12) then
+            local target = parse_name(data, rdoffset)
+            table.insert(answers.ptr, target)
+        end
+
+        -- AAAA record (IPv6 address)
+        if (type == 28) then
+            if (rdlength ~= 16) then
+                return nil, 'bad RDLENGTH with AAAA record'
+            end
+            local offs = rdoffset
+            local aaaa = string.format('%x', data:byte(offs) * 256 + data:byte(offs + 1))
+            while (offs < rdoffset + 14) do
+                offs = offs + 2
+                aaaa = aaaa..':'..string.format('%x', data:byte(offs) * 256 + data:byte(offs + 1))
+            end
+
+            -- compress IPv6 address
+            for _, s in ipairs({ ':0:0:0:0:0:0:0:', ':0:0:0:0:0:0:', ':0:0:0:0:0:', ':0:0:0:0:', ':0:0:0:', ':0:0:' }) do
+                local r = aaaa:gsub(s, '::')
+                if (r ~= aaaa) then
+                    aaaa = r
+                    break
+                end
+            end
+            answers.aaaa[name] = aaaa
+        end
+
+        -- SRV record (service location)
+        if (type == 33) then
+            if (rdlength < 6) then
+                return nil, 'bad RDLENGTH with SRV record'
+            end
+            answers.srv[name] = {
+                target = parse_name(data, rdoffset + 6),
+                port = data:byte(rdoffset + 4) * 256 + data:byte(rdoffset + 5)
+            }
+        end
+
+        -- next answer record
+        offset = offset + 10 + rdlength
+    end
+
+    return answers
+end
+
+local socketMessageQueue = {
+    s = nil,
+    queue = nil,
+    isSendPending = false,
+    init = function(self, s)
+        self.s = s
+        self.queue = {}
+        self.s:on('sent', function()
+            self:onMessageSent()
+        end)
+    end,
+    deinit = function(self)
+        self.s = nil
+        self.queue = nil
+    end,
+    push = function(self, port, target, message)
+        table.insert(self.queue, {
+            port = port,
+            target = target,
+            message = message
+        })
+        self:send()
+    end,
+    send = function(self)
+        if not self.isSendPending and #self.queue > 0 then
+            self.isSendPending = true
+            local nextMessage = table.remove(self.queue, 1)
+            self.s:send(
+                nextMessage.port,
+                nextMessage.target,
+                nextMessage.message
+            )
+        end
+    end,
+    onMessageSent = function(self)
+        self.isSendPending = false
+        if #self.queue > 0 then
+            self:send()
+        end
+    end
+}
+
+--- Locate MDNS services in local network
+--
+-- @param service   MDNS service name to search for (e.g. _ipps._tcp). A .local postfix will
+--                  be appended if needed. If this parameter is not specified, all services
+--                  will be queried.
+--
+-- @param timeout   Number of seconds to wait for MDNS responses. The default timeout is 2
+--                  seconds if this parameter is not specified.
+--
+-- @param own_ip    querying device IP address
+--
+-- @param callback  to receive Table of MDNS services. Entry keys are service identifiers. Each entry
+--                  is a table containing all or a subset of the following elements:
+--                      name: MDNS service name (e.g. HP Laserjet 4L @ server.example.com)
+--                      service: MDNS service type (e.g. _ipps._tcp.local)
+--                      hostname: hostname
+--                      port: port number
+--                      ipv4: IPv4 address
+--                      ipv6: IPv6 address
+--
+-- @return          Nothing
+--
+function query(service, timeout,own_ip,callback)
+
+    -- browse all services if no service name specified
+    local browse = false
+    if (not service) then
+        service = '_services._dns-sd._udp'
+        browse = true
+    end
+
+    -- append .local if needed
+    if (service:sub(-6) ~= '.local') then
+        service = service..'.local'
+    end
+
+    -- default timeout: 2 seconds
+    local timeout = timeout or 2.0
+
+    local mdns_multicast_ip, mdns_port = '224.0.0.251', 5353
+    net.multicastJoin(own_ip, mdns_multicast_ip)
+    udpSocket = net.createUDPSocket()
+    socketMessageQueue:init(udpSocket)
+    -- collect responses until timeout
+    local answers = { srv = {}, a = {}, aaaa = {}, ptr = {} }
+    udpSocket:on("receive", function(s, data, port, ip)
+        -- print(string.format("received '%s' from %s:%d", data, ip, port))
+        print(string.format("received %s bytes from %s:%d", #data, ip, port))
+        if data and (port == mdns_port) then
+            mdns_parse(service, data, answers)
+            if (browse) then
+                print("Sending "..#answers.ptr.." queries:")
+                for _, ptr in ipairs(answers.ptr) do
+                    print("  -> "..ptr)
+                    -- getting an error here: PANIC: unprotected error in call to Lua API (mdnsclient.lua:228: unknown error)
+                    -- Maybe it's trying to spam :send too quickly?
+                    -- s:send(mdns_port, mdns_multicast_ip, mdns_make_query(ptr))
+                    socketMessageQueue:push(mdns_port, mdns_multicast_ip, mdns_make_query(ptr))
+                end
+                answers.ptr = {}
+            end
+        end
+    end)
+    udpSocket:listen()
+    port, ip = udpSocket:getaddr()
+    local mdns_query = mdns_make_query(service)
+    -- udpSocket:send(mdns_port, mdns_multicast_ip,mdns_query)
+    socketMessageQueue:push(mdns_port, mdns_multicast_ip, mdns_query)
+
+    function onTimeout()
+        --once the timer is over, cleanup thesockets and collect the results
+        socketMessageQueue:deinit()
+        udpSocket:close()
+        net.multicastLeave(own_ip,mdns_multicast_ip)
+
+        local services = {}
+        print("Got "..#answers.srv.." service entries...")
+        for k,v in pairs(answers.srv) do
+            print("  Processing  "..k.."  "..v.target.."  "..v.port)
+            local pos = k:find('%.')
+            if (pos and (pos > 1) and (pos < #k)) then
+                local name, svc = k:sub(1, pos - 1), k:sub(pos + 1)
+                if (browse) or (svc == service) then
+                    if (v.target) then
+                        if (answers.a[v.target]) then
+                            v.ipv4 = answers.a[v.target]
+                        end
+                        if (answers.aaaa[v.target]) then
+                            v.ipv6 = answers.aaaa[v.target]
+                        end
+                        if (v.target:sub(-6) == '.local') then
+                            v.hostname = v.target:sub(1, #v.target - 6)
+                        end
+                        v.target = nil
+                    end
+                    v.service = svc
+                    v.name = name
+                    services[k] = v
+                end
+            end
+        end
+
+        local createCallbackWithArgs = function (err,data)
+            return function()
+                callback(err,data)
+            end
+        end
+        node.task.post(createCallbackWithArgs(nil,services))
+    end
+
+    if not tmr.create():alarm(timeout*1000, tmr.ALARM_SINGLE, onTimeout) then
+        -- If we can't create the timer, bail.
+        socketMessageQueue.deinit()
+        udpSocket:close()
+        net.multicastLeave(own_ip,mdns_multicast_ip)
+        node.task.post(createCallbackWithArgs('Could not create alarm',nil))
+    end
+    -- I could've sworn that tmr.alarm used to be a thing?
+    -- But I can't see it mentioned anywhere.
+    -- tmr.alarm(0,timeout*1000,tmr.ALARM_SINGLE, onTimeout)
+end
+
+-- query results and 1 based index to identify the result to return when there are more than one matches
+-- query results and 1 based index to identify the result to return when there are more than one matches
+local extractIpAndPortFromResults = function(results,index)
+    local ip,port
+
+    local result_index = 1
+    for k,v in pairs(results) do
+        print(k)
+        for k1,v1 in pairs(v) do
+            print('  '..k1..': '..v1)
+            if(k1=="ipv4") then ip = v1 end
+            if(k1=="port") then port = v1 end
+        end
+
+        if result_index == index then
+            return ip , port
+        else
+            result_index  = result_index + 1
+        end
+
+    end
+    return nil , nil
+end
+
+mdnsclient = {
+    extractIpAndPortFromResults=extractIpAndPortFromResults,
+    query=query
+}
+
+end
+return mdnsclient

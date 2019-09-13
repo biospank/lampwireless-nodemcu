@@ -1,16 +1,20 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,PWS
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,WPS,HTTP
 
 --init.lua
 rRgbLedPin = 5
 gRgbLedPin = 1
 bRgbLedPin = 2
 greenLedPin = 7
-buttonPin = 3
-relayPin = 6
+buttonPin = 6
+PIRpin = 3
+
+lampServerIp = nil
+lampServerPort = nil
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
+gpio.mode(PIRpin, gpio.INPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
-gpio.mode(relayPin, gpio.OUTPUT)
+
 pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
 pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
 pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
@@ -59,10 +63,7 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
     end
   else
     connTick:stop()
-    bootLedTick:stop()
-    gpio.write(greenLedPin, gpio.HIGH)
     print("Connected to wifi as: " .. wifi.sta.getip())
-    dofile("mdnservice.lua") -- expose mdn service
-    dofile("httpserver.lua") -- start http server
+    dofile("mdnclient.lua") -- start mdns discovery
   end
 end)
