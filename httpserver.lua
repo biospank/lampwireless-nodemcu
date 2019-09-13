@@ -57,14 +57,36 @@ function turnAlertOff()
   end
 end
 
+local function flash(mode, ledState)
+  if ledState == gpio.LOW then
+    if mode == "alarm" then
+      gpio.write(relayPin, gpio.HIGH)
+      tmr.create():alarm(200, tmr.ALARM_SINGLE, function()
+        gpio.write(relayPin, gpio.LOW)
+      end)
+      gpio.write(relayPin, gpio.HIGH)
+      tmr.create():alarm(200, tmr.ALARM_SINGLE, function()
+        gpio.write(relayPin, gpio.LOW)
+      end)
+    else
+      gpio.write(relayPin, gpio.HIGH)
+    end
+  else
+    gpio.write(relayPin, gpio.LOW)
+  end
+end
+
 function turnRelayOn(vars)
   print("Turning on gpio 2..")
 
   local params = collectQueryStringParams(vars)
   local times = tonumber((params.delay) or 5000) * 2 / 1000
+  local mode = params.mode
   local ledState = gpio.LOW
   local running, mode = relayTick:state()
   local cnt = 0
+
+  print(params.mode)
 
   if not running then
     relayTick:alarm(500, tmr.ALARM_AUTO, function()
@@ -77,7 +99,7 @@ function turnRelayOn(vars)
           ledState = gpio.LOW
         end
 
-        gpio.write(relayPin, ledState)
+        flash(mode, ledState)
       else
         print("Turning off gpio 2..")
         relayTick:stop()
