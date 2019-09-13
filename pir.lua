@@ -2,6 +2,7 @@ local pirTick = tmr.create()
 
 local sendRequest = function()
   print("Sending http request...")
+  print("http://"..lampServerIp..":"..lampServerPort.."/notify?mode=alarm&client=pir&delay=5000&alert=false")
 
   http.get("http://"..lampServerIp..":"..lampServerPort.."/notify?mode=alarm&client=pir&delay=5000&alert=false", nil, function(code, data)
     if (code < 0) then
