@@ -5,7 +5,7 @@ red, green, blue = nil
 function turnAlertOn(params, temporary)
   local ledState = gpio.LOW
   local count = 0
-  local running, mode = rgbLedTick:state()
+  local running, _mode = rgbLedTick:state()
 
   red = tonumber(params.r)
   green = tonumber(params.g)
@@ -47,13 +47,31 @@ function turnAlertOn(params, temporary)
 end
 
 function turnAlertOff()
-  running, mode = rgbLedTick:state()
+  local running, _mode = rgbLedTick:state()
 
   if running then
     rgbLedTick:stop()
     pwm.setduty(rRgbLedPin, 1023)
     pwm.setduty(gRgbLedPin, 1023)
     pwm.setduty(bRgbLedPin, 1023)
+  end
+end
+
+local function flashLight(mode, ledState)
+  if ledState == gpio.LOW then
+    if mode == "alarm" then
+      gpio.write(relayPin, gpio.HIGH)
+      tmr.create():alarm(100, tmr.ALARM_SINGLE, function()
+        gpio.write(relayPin, gpio.LOW)
+        tmr.create():alarm(300, tmr.ALARM_SINGLE, function()
+          gpio.write(relayPin, gpio.HIGH)
+        end)
+      end)
+    else
+      gpio.write(relayPin, gpio.HIGH)
+    end
+  else
+    gpio.write(relayPin, gpio.LOW)
   end
 end
 
@@ -68,8 +86,6 @@ function turnRelayOn(vars)
 
   if not running then
     relayTick:alarm(500, tmr.ALARM_AUTO, function()
-      cnt = cnt + 1
-
       if cnt < times then
         if ledState == gpio.LOW then
           ledState = gpio.HIGH
@@ -77,7 +93,7 @@ function turnRelayOn(vars)
           ledState = gpio.LOW
         end
 
-        gpio.write(relayPin, ledState)
+        flashLight(params.mode, ledState)
       else
         print("Turning off gpio 2..")
         relayTick:stop()
@@ -89,6 +105,8 @@ function turnRelayOn(vars)
           turnAlertOn(params, false)
         end
       end
+
+      cnt = cnt + 1
     end)
   end
 end
