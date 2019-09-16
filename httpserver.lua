@@ -61,17 +61,21 @@ local function flashLight(mode, ledState)
   if ledState == gpio.LOW then
     if mode == "alarm" then
       gpio.write(relayPin, gpio.HIGH)
-      tmr.create():alarm(100, tmr.ALARM_SINGLE, function()
+      tmr.create():alarm(250, tmr.ALARM_SINGLE, function()
         gpio.write(relayPin, gpio.LOW)
-        tmr.create():alarm(300, tmr.ALARM_SINGLE, function()
-          gpio.write(relayPin, gpio.HIGH)
-        end)
       end)
     else
       gpio.write(relayPin, gpio.HIGH)
     end
   else
-    gpio.write(relayPin, gpio.LOW)
+    if mode == "alarm" then
+      gpio.write(relayPin, gpio.HIGH)
+      tmr.create():alarm(250, tmr.ALARM_SINGLE, function()
+        gpio.write(relayPin, gpio.LOW)
+      end)
+    else
+      gpio.write(relayPin, gpio.LOW)
+    end
   end
 end
 
