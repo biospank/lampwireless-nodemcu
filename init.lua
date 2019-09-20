@@ -59,11 +59,11 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
     if cnt == 20 then
       connTick:stop()
       print("Entering wps setup...")
-      dofile("wpssetup.lua")
+      dofile("wpssetup.lc")
     end
   else
     connTick:stop()
     print("Connected to wifi as: " .. wifi.sta.getip())
-    dofile("mdnclient.lua") -- start mdns discovery
+    dofile("mdnclient.lc") -- start mdns discovery
   end
 end)
