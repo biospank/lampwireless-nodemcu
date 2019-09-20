@@ -158,6 +158,9 @@ srv:listen(80, function(conn)
       turnAlertOff()
     elseif url == "reset" then
       softReset()
+    elseif url == "firmware/version" then
+      conn:send("HTTP/1.1 200 OK\r\n\r\n" .. firmwareVersion)
+      return
     else
       conn:send("HTTP/1.1 404 resource not found")
       return
@@ -168,7 +171,7 @@ srv:listen(80, function(conn)
 
   conn:on("sent", function(conn)
     -- conn:send("<!DOCTYPE html><html>ok</html>")
-    conn:send("ok")
+    -- conn:send("ok")
     conn:close()
     collectgarbage();
   end)
