@@ -55,14 +55,14 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
     if cnt == 20 then
       connTick:stop()
       print("Entering wps setup...")
-      dofile("wpssetup.lua")
+      dofile("wpssetup.lc")
     end
   else
     connTick:stop()
     bootLedTick:stop()
     gpio.write(greenLedPin, gpio.HIGH)
     print("Connected to wifi as: " .. wifi.sta.getip())
-    dofile("mdnservice.lua") -- expose mdn service
-    dofile("httpserver.lua") -- start http server
+    dofile("mdnservice.lc") -- expose mdn service
+    dofile("httpserver.lc") -- start http server
   end
 end)
