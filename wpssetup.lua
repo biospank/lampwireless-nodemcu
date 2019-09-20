@@ -36,7 +36,7 @@ wps.start(function(status)
           wpsConnTick:stop()
 
           print("WPS: Entering wifi setup...")
-          dofile("wifisetup.lua")
+          dofile("wifisetup.lc")
 
         end
       else
@@ -73,5 +73,5 @@ wps.start(function(status)
   wps.disable()
 
   print("WPS: Entering wifi setup...")
-  dofile("wifisetup.lua")
+  dofile("wifisetup.lc")
 end)
