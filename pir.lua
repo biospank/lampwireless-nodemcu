@@ -16,7 +16,7 @@ end
 
 local bouncingTime = 0
 
-pirTick:alarm(1000, tmr.ALARM_AUTO, function()
+pirTick:alarm(500, tmr.ALARM_AUTO, function()
   if gpio.read(PIRpin) == 1 then
     print("move detected!")
     print(bouncingTime)

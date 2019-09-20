@@ -1,4 +1,4 @@
-local mc = dofile("mdns.lua")
+local mc = dofile("mdns.lc")
 
 --constants
 local service_to_query = '_lampwireless._tcp' --service pattern to search
@@ -34,7 +34,7 @@ local result_handler = function(err, res)
       bootLedTick:stop()
       gpio.write(greenLedPin, gpio.HIGH)
       activateMdnLed(false)
-      dofile("pir.lua")
+      dofile("pir.lc")
     else
       print('Browse attempt returned no matching results')
     end
