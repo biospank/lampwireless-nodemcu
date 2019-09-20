@@ -1,6 +1,7 @@
 -- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,PWS
 
 --init.lua
+firmwareVersion = "1.0.0"
 rRgbLedPin = 5
 gRgbLedPin = 6
 bRgbLedPin = 2
