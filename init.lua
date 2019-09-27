@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,WPS,HTTP
+-- enduser_setup file gpio http mdns mqtt net node pwm sjson tmr uart wifi wps
 
 --init.lua
 rRgbLedPin = 5
@@ -10,6 +10,7 @@ PIRpin = 3
 
 lampServerIp = nil
 lampServerPort = nil
+lampServerChipId = nil
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(PIRpin, gpio.INPUT)

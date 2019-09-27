@@ -18,15 +18,15 @@ local bouncingTime = 0
 
 pirTick:alarm(500, tmr.ALARM_AUTO, function()
   if gpio.read(PIRpin) == 1 then
-    print("move detected!")
-    print(bouncingTime)
+    -- print("move detected!")
+    -- print(bouncingTime)
     if bouncingTime == 0 then
       sendRequest()
     end
     bouncingTime = bouncingTime + 1
   else
-    print("no movement...")
-    print(bouncingTime)
+    -- print("no movement...")
+    -- print(bouncingTime)
     if bouncingTime > 0 then
       bouncingTime = bouncingTime + 1
     end

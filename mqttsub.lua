@@ -1,0 +1,93 @@
+-- mqttsub.lua
+local mqttBroker = nil
+local mqttBrokerClientId = node.chipid()
+local mqttBrokerHost = "192.168.1.23"
+local mqttBrokerPort = 1883
+local mqttBrokerUsr = "lampwireless"
+local mqttBrokerPwd = "biospank9571"
+
+local function mqttBrokerConfTopic()
+  return "lampwireless/" .. lampServerChipId .. "/client/" .. mqttBrokerClientId .. "/conf"
+end
+
+local function mqttBrokerStatusTopic()
+  return "lampwireless/" .. lampServerChipId .. "/client/" .. mqttBrokerClientId .. "/status"
+end
+
+local function offlineMessage()
+  return {["clientId"] = mqttBrokerClientId, ["status"] = "offline"}
+end
+
+local function onlineMessage()
+  return {["clientId"] = mqttBrokerClientId, ["status"] = "online"}
+end
+
+local function conn()
+  mqttBroker:lwt(mqttBrokerStatusTopic(), sjson.encode(offlineMessage()), 0, 1)
+  mqttBroker:connect(mqttBrokerHost, mqttBrokerPort, false, function(client)
+    print ("Connected")
+
+    client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 0, function(client)
+      print("Sent online message to topic: " .. mqttBrokerStatusTopic())
+    end)
+
+    print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
+    -- subscribe topic with qos = 0
+    client:subscribe(mqttBrokerConfTopic(), 0, function(client)
+      print("Subscription success")
+    end)
+  end,
+  function(client, reason)
+    print("Failed to connect: " .. reason)
+  end)
+end
+
+local function getLampChipId()
+  print("Retrieve lamp server chip id...")
+  print("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid")
+
+  http.get("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid", nil, function(code, data)
+    if (code < 0) then
+      print("HTTP request failed")
+    else
+      print("Lamp chip id: " .. data)
+      lampServerChipId = data
+      conn()
+    end
+  end)
+end
+
+-- Reconnect to MQTT when we receive an "offline" message.
+local function reconn()
+  print("Disconnected, reconnecting....")
+  conn()
+end
+
+-- Turn on gpio 2 and off after 5 sec.
+local function onMsg(_client, _topic, data)
+  print(_data)
+  conf = sjson.decode(data)
+
+  -- print("clientId: "..conf.clientId)
+  -- print("name: "..conf.name)
+  -- print("type: "..conf.type)
+  -- print("mode: "..conf.mode)
+  -- print("delay: ", conf.delay)
+  -- print("alert: "..conf.alert)
+  -- print("active: ", conf.active)
+end
+
+local function makeConn()
+  mqttBroker = mqtt.Client(mqttBrokerClientId, 20, mqttBrokerUsr, mqttBrokerPwd)
+  -- Set up the event callbacks
+  print("Setting up callbacks")
+  -- mqttBroker:on("connect", function(client) print ("connected") end)
+  mqttBroker:on("offline", reconn)
+  -- on publish message receive event
+  mqttBroker:on("message", onMsg)
+  getLampChipId()
+  -- Connect to the Broker
+  -- conn()
+end
+
+makeConn()

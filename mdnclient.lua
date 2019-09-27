@@ -25,15 +25,13 @@ local result_handler = function(err, res)
     print("Got Query results")
     lampServerIp, lampServerPort = mc.extractIpAndPortFromResults(res, 1)
 
-    print(lampServerIp)
-    print(lampServerPort)
-
     if lampServerIp and lampServerPort then
       foundBroker = true
       print('Lamp server '..lampServerIp..":"..lampServerPort)
       bootLedTick:stop()
       gpio.write(greenLedPin, gpio.HIGH)
       activateMdnLed(false)
+      dofile("mqttsub.lc")
       dofile("pir.lc")
     else
       print('Browse attempt returned no matching results')
