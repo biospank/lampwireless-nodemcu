@@ -161,6 +161,9 @@ srv:listen(80, function(conn)
     elseif url == "firmware/version" then
       conn:send("HTTP/1.1 200 OK\r\n\r\n" .. firmwareVersion)
       return
+    elseif url == "hardware/chipid" then
+      conn:send("HTTP/1.1 200 OK\r\n\r\n" .. node.chipid())
+      return
     else
       conn:send("HTTP/1.1 404 resource not found")
       return
