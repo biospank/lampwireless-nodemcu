@@ -19,6 +19,8 @@ pwm.start(rRgbLedPin)
 pwm.start(gRgbLedPin)
 pwm.start(bRgbLedPin)
 
+fileSystem = dofile("fs.lc")
+
 -- define a callback function
 function buttonCb()
   print("Resetting device...")

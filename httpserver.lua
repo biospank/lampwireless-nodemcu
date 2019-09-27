@@ -2,6 +2,18 @@ rgbLedTick = tmr.create()
 relayTick = tmr.create()
 red, green, blue = nil
 
+settings = fileSystem.loadSettings()
+
+local function showSettings()
+  if (settings ~= nil) then
+    for k, v in pairs(settings) do
+      print(k .. "=" .. v)
+    end
+  else
+    print("no settings available")
+  end
+end
+
 function turnAlertOn(params, temporary)
   local ledState = gpio.LOW
   local count = 0
@@ -85,7 +97,7 @@ function turnRelayOn(vars)
   local params = collectQueryStringParams(vars)
   local times = tonumber((params.delay) or 5000) * 2 / 1000
   local ledState = gpio.LOW
-  local running, mode = relayTick:state()
+  local running, _mode = relayTick:state()
   local cnt = 0
 
   if not running then
@@ -152,6 +164,8 @@ srv:listen(80, function(conn)
     if url == "ping" then
     elseif url == "notify" then
       turnRelayOn(vars)
+    elseif url == "settings" then
+      showSettings()
     elseif url == "testalert" then
       turnAlertOn(collectQueryStringParams(vars), true)
     elseif url == "alertoff" then
