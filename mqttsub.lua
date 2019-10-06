@@ -22,23 +22,37 @@ local function onlineMessage()
   return {["clientId"] = mqttBrokerClientId, ["status"] = "online"}
 end
 
+local function setOnlineStatus()
+  bootLedTick:stop()
+  pwm.setduty(rRgbLedPin, 1023)
+  pwm.setduty(gRgbLedPin, 1023)
+  pwm.setduty(bRgbLedPin, 1023)
+  gpio.write(greenLedPin, gpio.HIGH)
+end
+
 local function conn()
-  mqttBroker:lwt(mqttBrokerStatusTopic(), sjson.encode(offlineMessage()), 0, 1)
+  print("Connecting to broker " .. mqttBrokerHost .. "...")
+  -- Set up last will testament
+  mqttBroker:lwt(mqttBrokerStatusTopic(), sjson.encode(offlineMessage()), 1, 1)
+  -- Connect to broker
   mqttBroker:connect(mqttBrokerHost, mqttBrokerPort, false, function(client)
     print ("Connected")
 
+    print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
     client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 0, function(client)
-      print("Sent online message to topic: " .. mqttBrokerStatusTopic())
-    end)
-
-    print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
-    -- subscribe topic with qos = 0
-    client:subscribe(mqttBrokerConfTopic(), 0, function(client)
-      print("Subscription success")
+      print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
+      -- subscribe topic with qos = 0
+      client:subscribe(mqttBrokerConfTopic(), 0, function(client)
+        print("Subscription success")
+        setOnlineStatus()
+        dofile("pir.lc")
+      end)
     end)
   end,
   function(client, reason)
     print("Failed to connect: " .. reason)
+    setOnlineStatus()
+    dofile("pir.lc")
   end)
 end
 
@@ -63,18 +77,17 @@ local function reconn()
   conn()
 end
 
--- Turn on gpio 2 and off after 5 sec.
-local function onMsg(_client, _topic, data)
-  print(_data)
-  conf = sjson.decode(data)
+local function onMsg(_client, topic, data)
+  print(topic .. ":" )
+  if data ~= nil then
+    print(data)
 
-  -- print("clientId: "..conf.clientId)
-  -- print("name: "..conf.name)
-  -- print("type: "..conf.type)
-  -- print("mode: "..conf.mode)
-  -- print("delay: ", conf.delay)
-  -- print("alert: "..conf.alert)
-  -- print("active: ", conf.active)
+    clientConf = sjson.decode(data)
+
+    for k,v in pairs(clientConf) do
+      print(k, v)
+    end
+  end
 end
 
 local function makeConn()

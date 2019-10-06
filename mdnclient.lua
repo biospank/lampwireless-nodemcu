@@ -7,7 +7,7 @@ local query_repeat_interval = 6 -- seconds
 local foundBroker = false
 local mdnTick = tmr.create()
 
-local function activateMdnLed(active)
+function activateMdnLed(active)
   if active then
     pwm.setduty(rRgbLedPin, 500)
     pwm.setduty(gRgbLedPin, 100)
@@ -28,11 +28,10 @@ local result_handler = function(err, res)
     if lampServerIp and lampServerPort then
       foundBroker = true
       print('Lamp server '..lampServerIp..":"..lampServerPort)
-      bootLedTick:stop()
-      gpio.write(greenLedPin, gpio.HIGH)
-      activateMdnLed(false)
+      -- bootLedTick:stop()
+      -- gpio.write(greenLedPin, gpio.HIGH)
+      -- activateMdnLed(false)
       dofile("mqttsub.lc")
-      dofile("pir.lc")
     else
       print('Browse attempt returned no matching results')
     end

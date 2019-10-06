@@ -2,9 +2,9 @@ local pirTick = tmr.create()
 
 local sendRequest = function()
   print("Sending http request...")
-  print("http://"..lampServerIp..":"..lampServerPort.."/notify?mode=alarm&client=pir&delay=5000&alert=false")
+  print("http://"..lampServerIp..":"..lampServerPort.."/notify?mode="..clientConf.mode.."&client="..clientConf.client.."&delay="..clientConf.delay.."&alert="..clientConf.alert)
 
-  http.get("http://"..lampServerIp..":"..lampServerPort.."/notify?mode=alarm&client=pir&delay=5000&alert=false", nil, function(code, data)
+  http.get("http://"..lampServerIp..":"..lampServerPort.."/notify?mode="..clientConf.mode.."&client="..clientConf.client.."&delay="..clientConf.delay.."&alert="..clientConf.alert, nil, function(code, data)
     if (code < 0) then
       print("HTTP request failed")
     else

@@ -42,7 +42,8 @@ wps.start(function(status)
       else
         print("WPS: Connection successful: " .. wifi.sta.getip())
         wpsConnTick:stop()
-        ssid, pwd, _bssid = wifi.sta.getconfig(false)
+        -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
+        fileSystem.dumpSettings(wifi.sta.getconfig(true))
 
         gpio.write(greenLedPin, gpio.LOW)
         activateWpsLed(false)
@@ -50,7 +51,7 @@ wps.start(function(status)
         print("WPS: Restarting device...")
         tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
           wifi.setmode(wifi.STATION);
-          wifi.sta.config({ssid = ssid, pwd = pwd, save = true});
+          -- wifi.sta.config({ssid = ssid, pwd = pwd, save = true});
           node.restart()
         end)
 

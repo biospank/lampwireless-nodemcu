@@ -11,6 +11,7 @@ PIRpin = 3
 lampServerIp = nil
 lampServerPort = nil
 lampServerChipId = nil
+clientConf = {["client"] = "pir", ["mode"] = "alarm", ["delay"] = "5000", ["alert"] = "false"}
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(PIRpin, gpio.INPUT)
@@ -23,10 +24,27 @@ pwm.start(rRgbLedPin)
 pwm.start(gRgbLedPin)
 pwm.start(bRgbLedPin)
 
+wifi.setmode(wifi.STATION)
+
+fileSystem = dofile("fs.lc")
+local settings = fileSystem.loadSettings()
+
+if (settings ~= nil) then
+  -- for k, v in pairs(settings) do
+  --   print(k .. "=" .. v)
+  -- end
+  wifi.sta.config({ssid = settings.ssid, pwd = settings.pwd})
+else
+  print("no settings available")
+end
+
+-- wifi.sta.connect()
+
 -- define a callback function
 function buttonCb()
   print("Resetting device...")
   wifi.sta.clearconfig()
+  fileSystem.clearSettings()
   node.restart()
 end
 

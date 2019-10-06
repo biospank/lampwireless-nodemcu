@@ -251,7 +251,7 @@ function query(service, timeout,own_ip,callback)
     end
 
     -- default timeout: 2 seconds
-    local timeout = timeout or 2.0
+    local timeout = timeout or 2
 
     local mdns_multicast_ip, mdns_port = '224.0.0.251', 5353
     net.multicastJoin(own_ip, mdns_multicast_ip)
