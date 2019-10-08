@@ -36,14 +36,11 @@ local function conn()
   mqttBroker:lwt(mqttBrokerStatusTopic(), sjson.encode(offlineMessage()), 1, 1)
   -- Connect to broker
   mqttBroker:connect(mqttBrokerHost, mqttBrokerPort, false, function(client)
-    print ("Connected")
-
     print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
     client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 0, function(client)
       print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
       -- subscribe topic with qos = 0
       client:subscribe(mqttBrokerConfTopic(), 0, function(client)
-        print("Subscription success")
         setOnlineStatus()
         dofile("pir.lc")
       end)
@@ -56,6 +53,8 @@ local function conn()
   end)
 end
 
+local lampChipRequestAttempts = 1
+
 local function getLampChipId()
   print("Retrieve lamp server chip id...")
   print("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid")
@@ -63,6 +62,13 @@ local function getLampChipId()
   http.get("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid", nil, function(code, data)
     if (code < 0) then
       print("HTTP request failed")
+      if (lampChipRequestAttempts > 3) then
+        setOnlineStatus()
+        dofile("pir.lc")
+      else
+        lampChipRequestAttempts = lampChipRequestAttempts + 1
+        getLampChipId()
+      end
     else
       print("Lamp chip id: " .. data)
       lampServerChipId = data
@@ -84,9 +90,9 @@ local function onMsg(_client, topic, data)
 
     clientConf = sjson.decode(data)
 
-    for k,v in pairs(clientConf) do
-      print(k, v)
-    end
+    -- for k,v in pairs(clientConf) do
+    --   print(k, v)
+    -- end
   end
 end
 

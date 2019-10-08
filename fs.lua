@@ -2,7 +2,7 @@
 
 local fs = {}
 local _SETTINGS = {}
-local fileName = "settings.txt"
+local fileName = "config.net"
 
 function fs.loadSettings()
   if file.open(fileName, "r") then
