@@ -1,10 +1,11 @@
 -- mqttsub.lua
+
+local mqttConf = dofile("broker.lc")
+
 local mqttBroker = nil
 local mqttBrokerClientId = node.chipid()
-local mqttBrokerHost = "192.168.1.23"
-local mqttBrokerPort = 1883
-local mqttBrokerUsr = "lampwireless"
-local mqttBrokerPwd = "biospank9571"
+local lampChipRequestAttempts = 1
+local mqttReconnectAttempts = 1
 
 local function mqttBrokerConfTopic()
   return "lampwireless/" .. lampServerChipId .. "/client/" .. mqttBrokerClientId .. "/conf"
@@ -31,13 +32,14 @@ local function setOnlineStatus()
 end
 
 local function conn()
-  print("Connecting to broker " .. mqttBrokerHost .. "...")
+  print("Connecting to broker " .. mqttConf.brokerHost .. ":" .. tostring(mqttConf.brokerPort) .. "...")
   -- Set up last will testament
   mqttBroker:lwt(mqttBrokerStatusTopic(), sjson.encode(offlineMessage()), 1, 1)
   -- Connect to broker
-  mqttBroker:connect(mqttBrokerHost, mqttBrokerPort, false, function(client)
+  mqttBroker:connect(mqttConf.brokerHost, mqttConf.brokerPort, false, function(client)
+    mqttReconnectAttempts = 1
     print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
-    client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 0, function(client)
+    client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1, function(client)
       print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
       -- subscribe topic with qos = 0
       client:subscribe(mqttBrokerConfTopic(), 0, function(client)
@@ -52,8 +54,6 @@ local function conn()
     dofile("pir.lc")
   end)
 end
-
-local lampChipRequestAttempts = 1
 
 local function getLampChipId()
   print("Retrieve lamp server chip id...")
@@ -80,7 +80,12 @@ end
 -- Reconnect to MQTT when we receive an "offline" message.
 local function reconn()
   print("Disconnected, reconnecting....")
-  conn()
+  if (mqttReconnectAttempts > 3) then
+    mqttReconnectAttempts = 1
+  else
+    mqttReconnectAttempts = mqttReconnectAttempts + 1
+    conn()
+  end
 end
 
 local function onMsg(_client, topic, data)
@@ -97,7 +102,7 @@ local function onMsg(_client, topic, data)
 end
 
 local function makeConn()
-  mqttBroker = mqtt.Client(mqttBrokerClientId, 20, mqttBrokerUsr, mqttBrokerPwd)
+  mqttBroker = mqtt.Client(mqttBrokerClientId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
   -- Set up the event callbacks
   print("Setting up callbacks")
   -- mqttBroker:on("connect", function(client) print ("connected") end)
