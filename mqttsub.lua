@@ -3,24 +3,24 @@
 local mqttConf = dofile("broker.lc")
 
 local mqttBroker = nil
-local mqttBrokerClientId = node.chipid()
+local deviceId = node.chipid()
 local lampChipRequestAttempts = 1
 local mqttReconnectAttempts = 1
 
 local function mqttBrokerConfTopic()
-  return "lampwireless/" .. lampServerChipId .. "/client/" .. mqttBrokerClientId .. "/conf"
+  return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId .. "/conf"
 end
 
 local function mqttBrokerStatusTopic()
-  return "lampwireless/" .. lampServerChipId .. "/client/" .. mqttBrokerClientId .. "/status"
+  return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId .. "/status"
 end
 
 local function offlineMessage()
-  return {["clientId"] = mqttBrokerClientId, ["status"] = "offline"}
+  return {["id"] = deviceId, ["type"] = deviceType, ["status"] = "offline"}
 end
 
 local function onlineMessage()
-  return {["clientId"] = mqttBrokerClientId, ["status"] = "online"}
+  return {["id"] = deviceId, ["type"] = deviceType, ["status"] = "online"}
 end
 
 local function setOnlineStatus()
@@ -32,7 +32,7 @@ local function setOnlineStatus()
 end
 
 local function conn()
-  print("Connecting to broker " .. mqttConf.brokerHost .. ":" .. tostring(mqttConf.brokerPort) .. "...")
+  print("Connecting to broker " .. mqttConf.brokerHost .. ":" .. tostring(mqttConf.brokerPort) .. " with usr: " .. mqttConf.brokerUsr .. " pwd: " .. mqttConf.brokerPwd .. "...")
   -- Set up last will testament
   mqttBroker:lwt(mqttBrokerStatusTopic(), sjson.encode(offlineMessage()), 1, 1)
   -- Connect to broker
@@ -93,9 +93,9 @@ local function onMsg(_client, topic, data)
   if data ~= nil then
     print(data)
 
-    clientConf = sjson.decode(data)
+    deviceConf = sjson.decode(data)
 
-    -- for k,v in pairs(clientConf) do
+    -- for k,v in pairs(deviceConf) do
     --   print(k, v)
     -- end
   end
@@ -105,7 +105,7 @@ local function makeConn()
   mqttBroker = mqtt.Client(mqttBrokerClientId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
   -- Set up the event callbacks
   print("Setting up callbacks")
-  -- mqttBroker:on("connect", function(client) print ("connected") end)
+  -- mqttBroker:on("connect", function(device) print ("connected") end)
   mqttBroker:on("offline", reconn)
   -- on publish message receive event
   mqttBroker:on("message", onMsg)
