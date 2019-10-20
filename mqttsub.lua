@@ -38,13 +38,16 @@ local function conn()
   -- Connect to broker
   mqttBroker:connect(mqttConf.brokerHost, mqttConf.brokerPort, false, function(client)
     mqttReconnectAttempts = 1
+    setOnlineStatus()
+    dofile("pir.lc")
+
     print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
     client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1, function(client)
       print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
       -- subscribe topic with qos = 0
       client:subscribe(mqttBrokerConfTopic(), 0, function(client)
-        setOnlineStatus()
-        dofile("pir.lc")
+        -- setOnlineStatus()
+        -- dofile("pir.lc")
       end)
     end)
   end,
