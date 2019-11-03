@@ -12,7 +12,7 @@ lampServerIp = nil
 lampServerPort = nil
 lampServerChipId = nil
 deviceType = "pir"
-deviceConf = {} -- {["client"] = "pir", ["mode"] = "alarm", ["delay"] = "5000", ["alert"] = "false"}
+deviceConf = {} -- {["client"] = "pir", ["mode"] = "alarm", ["delay"] = "5000", ["alert"] = "false", ["r"] = "", ["g"] = "", ["b"] = ""}
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(PIRpin, gpio.INPUT)
