@@ -84,6 +84,7 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
   else
     connTick:stop()
     print("Connected to wifi as: " .. wifi.sta.getip())
-    dofile("mdnclient.lc") -- start mdns discovery
+    -- dofile("mdnclient.lc") -- start mdns discovery
+    dofile("mqttsub.lc")
   end
 end)

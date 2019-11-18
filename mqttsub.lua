@@ -39,7 +39,7 @@ local function conn()
   mqttBroker:connect(mqttConf.brokerHost, mqttConf.brokerPort, false, function(client)
     mqttReconnectAttempts = 1
     setOnlineStatus()
-    dofile("pir.lc")
+    -- dofile("pir.lc")
 
     print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
     client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1, function(client)
@@ -54,30 +54,35 @@ local function conn()
   function(client, reason)
     print("Failed to connect: " .. reason)
     setOnlineStatus()
-    dofile("pir.lc")
+    -- dofile("pir.lc")
   end)
 end
 
 local function getLampChipId()
   print("Retrieve lamp server chip id...")
-  print("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid")
 
-  http.get("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid", nil, function(code, data)
-    if (code < 0) then
-      print("HTTP request failed")
-      if (lampChipRequestAttempts > 3) then
-        setOnlineStatus()
-        dofile("pir.lc")
-      else
-        lampChipRequestAttempts = lampChipRequestAttempts + 1
-        getLampChipId()
-      end
-    else
-      print("Lamp chip id: " .. data)
-      lampServerChipId = data
-      conn()
-    end
-  end)
+  print("Lamp chip id: " .. "1234567")
+  lampServerChipId = "1234567"
+  conn()
+
+  -- print("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid")
+
+  -- http.get("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid", nil, function(code, data)
+  --   if (code < 0) then
+  --     print("HTTP request failed")
+  --     if (lampChipRequestAttempts > 3) then
+  --       setOnlineStatus()
+  --       dofile("pir.lc")
+  --     else
+  --       lampChipRequestAttempts = lampChipRequestAttempts + 1
+  --       getLampChipId()
+  --     end
+  --   else
+  --     print("Lamp chip id: " .. data)
+  --     lampServerChipId = data
+  --     conn()
+  --   end
+  -- end)
 end
 
 -- Reconnect to MQTT when we receive an "offline" message.

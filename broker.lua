@@ -3,10 +3,10 @@
 
 local t = {}
 
-t.brokerHost="192.168.1.20"
+t.brokerHost="10.10.17.65"
 t.brokerPort=1883
-t.brokerUsr="example"
-t.brokerPwd="secret"
+t.brokerUsr="lampwireless"
+t.brokerPwd="biospank9571"
 t.brokerKeepAlive=20
 
 return t
