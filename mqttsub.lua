@@ -110,7 +110,7 @@ local function onMsg(_client, topic, data)
 end
 
 local function makeConn()
-  mqttBroker = mqtt.Client(mqttBrokerClientId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
+  mqttBroker = mqtt.Client(deviceId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
   -- Set up the event callbacks
   print("Setting up callbacks")
   -- mqttBroker:on("connect", function(device) print ("connected") end)
