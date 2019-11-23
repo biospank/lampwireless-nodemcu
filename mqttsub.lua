@@ -2,25 +2,39 @@
 
 local mqttConf = dofile("broker.lc")
 
+local pirTick = tmr.create()
+local isMqttAlive = false
 local mqttBroker = nil
 local deviceId = node.chipid()
 local lampChipRequestAttempts = 1
 local mqttReconnectAttempts = 1
 
+local function mqttBrokerBaseTopic()
+  return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId
+end
+
 local function mqttBrokerConfTopic()
-  return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId .. "/conf"
+  return mqttBrokerBaseTopic() .. "/conf"
 end
 
 local function mqttBrokerStatusTopic()
-  return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId .. "/status"
+  return mqttBrokerBaseTopic() .. "/status"
+end
+
+local function mqttBrokerMessageTopic()
+  return mqttBrokerBaseTopic() .. "/message"
 end
 
 local function offlineMessage()
-  return {["id"] = deviceId, ["type"] = deviceType, ["status"] = "offline"}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "offline"}
 end
 
 local function onlineMessage()
-  return {["id"] = deviceId, ["type"] = deviceType, ["status"] = "online"}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online"}
+end
+
+local function alertMessage()
+  return {["mode"] = (deviceConf.mode or "alarm"), ["client"] = (deviceConf.client or "pir"), ["delay"] = (deviceConf.delay or "5000"), ["alert"] = (deviceConf.alert or "false"), ["r"] = (deviceConf.r or ""), ["g"] = (deviceConf.g or ""), ["b"] = (deviceConf.b or "")}
 end
 
 local function setOnlineStatus()
@@ -31,30 +45,82 @@ local function setOnlineStatus()
   gpio.write(greenLedPin, gpio.HIGH)
 end
 
+local function sendMessage()
+  if ((deviceConf.active or "true") == "true") then
+    print("Sending http request...")
+    local url = "http://"..lampServerIp..":"..lampServerPort.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "pir").."&delay="..(deviceConf.delay or "5000").."&alert="..(deviceConf.alert or "false").."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
+
+    print(url)
+
+    http.get(url, nil, function(code, data)
+      if (code < 0) then
+        print("HTTP request failed")
+      else
+        print(code, data)
+        print("http request sent!")
+
+        if isMqttAlive == true then
+          print("Publishing mqtt message...")
+          mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
+        end
+      end
+    end)
+  end
+end
+
+
+function listen()
+  local bouncingTime = 0
+
+  pirTick:stop()
+
+  pirTick:alarm(500, tmr.ALARM_AUTO, function()
+    if gpio.read(PIRpin) == 1 then
+      -- print("move detected!")
+      -- print(bouncingTime)
+      if bouncingTime == 0 then
+        bouncingTime = bouncingTime + 1
+        sendMessage()
+      end
+    else
+      -- print("no movement...")
+      -- print(bouncingTime)
+      if bouncingTime > 0 then
+        bouncingTime = bouncingTime + 1
+      end
+  
+      if bouncingTime > 5 then
+        bouncingTime = 0
+      end
+    end
+  end)
+end
+
 local function conn()
   print("Connecting to broker " .. mqttConf.brokerHost .. ":" .. tostring(mqttConf.brokerPort) .. " with usr: " .. mqttConf.brokerUsr .. " pwd: " .. mqttConf.brokerPwd .. "...")
   -- Set up last will testament
   mqttBroker:lwt(mqttBrokerStatusTopic(), sjson.encode(offlineMessage()), 1, 1)
   -- Connect to broker
   mqttBroker:connect(mqttConf.brokerHost, mqttConf.brokerPort, false, function(client)
+    isMqttAlive = true
     mqttReconnectAttempts = 1
-    setOnlineStatus()
-    dofile("pir.lc")
 
     print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
-    client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1, function(client)
-      print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
-      -- subscribe topic with qos = 0
-      client:subscribe(mqttBrokerConfTopic(), 0, function(client)
-        -- setOnlineStatus()
-        -- dofile("pir.lc")
-      end)
-    end)
+    client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1)
+
+    print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
+    -- subscribe topic with qos = 0
+    client:subscribe(mqttBrokerConfTopic(), 0)
+
+    setOnlineStatus()
+    listen()
+
   end,
   function(client, reason)
     print("Failed to connect: " .. reason)
+    isMqttAlive = false
     setOnlineStatus()
-    dofile("pir.lc")
+    listen()
   end)
 end
 
@@ -67,7 +133,7 @@ local function getLampChipId()
       print("HTTP request failed")
       if (lampChipRequestAttempts > 3) then
         setOnlineStatus()
-        dofile("pir.lc")
+        listen()
       else
         lampChipRequestAttempts = lampChipRequestAttempts + 1
         getLampChipId()
@@ -82,12 +148,20 @@ end
 
 -- Reconnect to MQTT when we receive an "offline" message.
 local function reconn()
-  print("Disconnected, reconnecting....")
+  print("Disconnected!")
+  isMqttAlive = false
+
   if (mqttReconnectAttempts > 3) then
+    print("Max reconnection attempts reached, giving up...")
     mqttReconnectAttempts = 1
   else
     mqttReconnectAttempts = mqttReconnectAttempts + 1
-    conn()
+    
+    print("Attempt to reconnect in 2 sec...")
+    -- tmr.delay(2000)
+    tmr.create():alarm(2000, tmr.ALARM_SINGLE, function()
+      conn()
+    end)
   end
 end
 
@@ -105,7 +179,7 @@ local function onMsg(_client, topic, data)
 end
 
 local function makeConn()
-  mqttBroker = mqtt.Client(mqttBrokerClientId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
+  mqttBroker = mqtt.Client(deviceId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
   -- Set up the event callbacks
   print("Setting up callbacks")
   -- mqttBroker:on("connect", function(device) print ("connected") end)
