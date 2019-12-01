@@ -7,7 +7,7 @@ local isMqttAlive = false
 local mqttBroker = nil
 local deviceId = node.chipid()
 local lampChipRequestAttempts = 1
-local mqttReconnectAttempts = 1
+local mqttConnectAttempts = 1
 
 local function mqttBrokerBaseTopic()
   return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId
@@ -103,7 +103,7 @@ local function conn()
   -- Connect to broker
   mqttBroker:connect(mqttConf.brokerHost, mqttConf.brokerPort, false, function(client)
     isMqttAlive = true
-    mqttReconnectAttempts = 1
+    mqttConnectAttempts = 1
 
     print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
     client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1)
@@ -119,8 +119,20 @@ local function conn()
   function(client, reason)
     print("Failed to connect: " .. reason)
     isMqttAlive = false
-    setOnlineStatus()
-    listen()
+
+    if (mqttConnectAttempts > 3) then
+      print("Max connection attempts reached, giving up...")
+      setOnlineStatus()
+      listen()
+    else
+      mqttConnectAttempts = mqttConnectAttempts + 1
+      
+      print("Attempt to connect in 3 sec...")
+      -- tmr.delay(3000)
+      tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
+        conn()
+      end)
+    end
   end)
 end
 
@@ -136,7 +148,11 @@ local function getLampChipId()
         listen()
       else
         lampChipRequestAttempts = lampChipRequestAttempts + 1
-        getLampChipId()
+        print("Attempt to get lamp server chip id in 3 sec...")
+        -- tmr.delay(3000)
+        tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
+          getLampChipId()
+        end)
       end
     else
       print("Lamp chip id: " .. data)
@@ -151,18 +167,12 @@ local function reconn()
   print("Disconnected!")
   isMqttAlive = false
 
-  if (mqttReconnectAttempts > 3) then
-    print("Max reconnection attempts reached, giving up...")
-    mqttReconnectAttempts = 1
-  else
-    mqttReconnectAttempts = mqttReconnectAttempts + 1
-    
-    print("Attempt to reconnect in 2 sec...")
-    -- tmr.delay(2000)
-    tmr.create():alarm(2000, tmr.ALARM_SINGLE, function()
-      conn()
-    end)
-  end
+  print("Attempt to reconnect in 3 sec...")
+  -- tmr.delay(3000)
+  tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
+    conn()
+  end)
+
 end
 
 local function onMsg(_client, topic, data)
