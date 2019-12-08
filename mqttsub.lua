@@ -88,7 +88,7 @@ function listen()
       if bouncingTime > 0 then
         bouncingTime = bouncingTime + 1
       end
-  
+
       if bouncingTime > 5 then
         bouncingTime = 0
       end
@@ -122,11 +122,11 @@ local function conn()
 
     if (mqttConnectAttempts > 3) then
       print("Max connection attempts reached, giving up...")
+      mqttConnectAttempts = 1
       setOnlineStatus()
       listen()
     else
       mqttConnectAttempts = mqttConnectAttempts + 1
-      
       print("Attempt to connect in 3 sec...")
       -- tmr.delay(3000)
       tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
@@ -172,7 +172,6 @@ local function reconn()
   tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
     conn()
   end)
-
 end
 
 local function onMsg(_client, topic, data)
@@ -189,6 +188,8 @@ local function onMsg(_client, topic, data)
 end
 
 local function makeConn()
+  collectgarbage()
+
   mqttBroker = mqtt.Client(deviceId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
   -- Set up the event callbacks
   print("Setting up callbacks")
