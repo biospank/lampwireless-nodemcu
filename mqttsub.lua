@@ -47,7 +47,13 @@ end
 
 local function sendMessage()
   if ((deviceConf.active or "true") == "true") then
+    if isMqttAlive == true then
+      print("Publishing mqtt message...")
+      mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
+    end
+
     print("Sending http request...")
+
     local url = "http://"..lampServerIp..":"..lampServerPort.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "pir").."&delay="..(deviceConf.delay or "5000").."&alert="..(deviceConf.alert or "false").."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
 
     print(url)
@@ -58,11 +64,6 @@ local function sendMessage()
       else
         print(code, data)
         print("http request sent!")
-
-        if isMqttAlive == true then
-          print("Publishing mqtt message...")
-          mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
-        end
       end
     end)
   end
