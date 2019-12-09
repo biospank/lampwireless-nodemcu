@@ -70,31 +70,34 @@ local function sendMessage()
 end
 
 
-function listen()
+function listen(active)
   local bouncingTime = 0
 
-  pirTick:stop()
+  if active then
+    pirTick:alarm(500, tmr.ALARM_AUTO, function()
+      if gpio.read(PIRpin) == 1 then
+        -- print("move detected!")
+        -- print(bouncingTime)
+        if bouncingTime == 0 then
+          bouncingTime = bouncingTime + 1
+          sendMessage()
+        end
+      else
+        -- print("no movement...")
+        -- print(bouncingTime)
+        if bouncingTime > 0 then
+          bouncingTime = bouncingTime + 1
+        end
 
-  pirTick:alarm(500, tmr.ALARM_AUTO, function()
-    if gpio.read(PIRpin) == 1 then
-      -- print("move detected!")
-      -- print(bouncingTime)
-      if bouncingTime == 0 then
-        bouncingTime = bouncingTime + 1
-        sendMessage()
+        if bouncingTime > 5 then
+          bouncingTime = 0
+        end
       end
-    else
-      -- print("no movement...")
-      -- print(bouncingTime)
-      if bouncingTime > 0 then
-        bouncingTime = bouncingTime + 1
-      end
+    end)
+  else
+    pirTick:stop()
+  end
 
-      if bouncingTime > 5 then
-        bouncingTime = 0
-      end
-    end
-  end)
 end
 
 local function conn()
@@ -114,26 +117,25 @@ local function conn()
     client:subscribe(mqttBrokerConfTopic(), 0)
 
     setOnlineStatus()
-    listen()
+    listen(true)
 
   end,
   function(client, reason)
     print("Failed to connect: " .. reason)
     isMqttAlive = false
+    listen(false)
 
     if (mqttConnectAttempts > 3) then
       print("Max connection attempts reached, giving up...")
       mqttConnectAttempts = 1
       setOnlineStatus()
-      listen()
+      listen(true)
     else
       mqttConnectAttempts = mqttConnectAttempts + 1
 
       print("Attempt to connect in 3 sec...")
-      -- tmr.delay(2000)
-      tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
-        conn()
-      end)
+      tmr.delay(3000)
+      conn()
     end
   end)
 end
@@ -147,7 +149,7 @@ local function getLampChipId()
       print("HTTP request failed")
       if (lampChipRequestAttempts > 3) then
         setOnlineStatus()
-        listen()
+        listen(true)
       else
         lampChipRequestAttempts = lampChipRequestAttempts + 1
         getLampChipId()
@@ -164,12 +166,11 @@ end
 local function reconn()
   print("Disconnected!")
   isMqttAlive = false
+  listen(false)
 
   print("Attempt to reconnect in 3 sec...")
-  -- tmr.delay(2000)
-  tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
-    conn()
-  end)
+  tmr.delay(3000)
+  conn()
 end
 
 local function onMsg(_client, topic, data)
