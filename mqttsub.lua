@@ -152,10 +152,8 @@ local function getLampChipId()
       else
         lampChipRequestAttempts = lampChipRequestAttempts + 1
         print("Attempt to get lamp server chip id in 3 sec...")
-        -- tmr.delay(3000)
-        tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
-          getLampChipId()
-        end)
+        tmr.delay(3000)
+        getLampChipId()
       end
     else
       print("Lamp chip id: " .. data)
