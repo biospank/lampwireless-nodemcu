@@ -28,7 +28,7 @@ pwm.start(bRgbLedPin)
 wifi.setmode(wifi.STATION)
 
 fileSystem = dofile("fs.lc")
-local settings = fileSystem.loadSettings()
+settings = fileSystem.loadSettings()
 
 if (settings ~= nil) then
   -- for k, v in pairs(settings) do
@@ -84,6 +84,12 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
   else
     connTick:stop()
     print("Connected to wifi as: " .. wifi.sta.getip())
-    dofile("mdnclient.lc") -- start mdns discovery
+
+    if ((settings ~= nil) and (settings.detached == true)) then
+      print("detached: ", settings.detached)
+      dofile("mqttsub.lc")
+    else
+      dofile("mdnclient.lc") -- start mdns discovery
+    end
   end
 end)

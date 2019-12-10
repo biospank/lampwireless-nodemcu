@@ -46,26 +46,35 @@ local function setOnlineStatus()
 end
 
 local function sendMessage()
-  if ((deviceConf.active or "true") == "true") then
-    if isMqttAlive == true then
-      print("Publishing mqtt message...")
-      mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
-    end
-
-    print("Sending http request...")
-
-    local url = "http://"..lampServerIp..":"..lampServerPort.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "pir").."&delay="..(deviceConf.delay or "5000").."&alert="..(deviceConf.alert or "false").."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
-
-    print(url)
-
-    http.get(url, nil, function(code, data)
-      if (code < 0) then
-        print("HTTP request failed")
-      else
-        print(code, data)
-        print("http request sent!")
+  if ((settings ~= nil) and (settings.detached == true)) then
+    if ((deviceConf.active or "true") == "true") then
+      if isMqttAlive == true then
+        print("Publishing mqtt message in detached mode...")
+        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
       end
-    end)
+    end
+  else
+    if ((deviceConf.active or "true") == "true") then
+      if isMqttAlive == true then
+        print("Publishing mqtt message...")
+        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
+      end
+
+      print("Sending http request...")
+
+      local url = "http://"..lampServerIp..":"..lampServerPort.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "pir").."&delay="..(deviceConf.delay or "5000").."&alert="..(deviceConf.alert or "false").."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
+
+      print(url)
+
+      http.get(url, nil, function(code, data)
+        if (code < 0) then
+          print("HTTP request failed")
+        else
+          print(code, data)
+          print("http request sent!")
+        end
+      end)
+    end
   end
 end
 
@@ -140,27 +149,33 @@ local function conn()
 end
 
 local function getLampChipId()
-  print("Retrieve lamp server chip id...")
-  print("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid")
+  if ((settings ~= nil) and (settings.detached == true)) then
+    print("Lamp chip id: ", settings.lamp_server_id)
+    lampServerChipId = settings.lamp_server_id
+    conn()
+  else
+    print("Retrieve lamp server chip id...")
+    print("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid")
 
-  http.get("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid", nil, function(code, data)
-    if (code < 0) then
-      print("HTTP request failed")
-      if (lampChipRequestAttempts > 3) then
-        setOnlineStatus()
-        listen(true)
+    http.get("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid", nil, function(code, data)
+      if (code < 0) then
+        print("HTTP request failed")
+        if (lampChipRequestAttempts > 3) then
+          setOnlineStatus()
+          listen(true)
+        else
+          lampChipRequestAttempts = lampChipRequestAttempts + 1
+          print("Attempt to get lamp server chip id in 3 sec...")
+          tmr.delay(3000)
+          getLampChipId()
+        end
       else
-        lampChipRequestAttempts = lampChipRequestAttempts + 1
-        print("Attempt to get lamp server chip id in 3 sec...")
-        tmr.delay(3000)
-        getLampChipId()
+        print("Lamp chip id: " .. data)
+        lampServerChipId = data
+        conn()
       end
-    else
-      print("Lamp chip id: " .. data)
-      lampServerChipId = data
-      conn()
-    end
-  end)
+    end)
+  end
 end
 
 -- Reconnect to MQTT when we receive an "offline" message.
@@ -180,6 +195,11 @@ local function onMsg(_client, topic, data)
     print(data)
 
     deviceConf = sjson.decode(data)
+
+    settings["lamp_server_id"] = lampServerChipId
+    settings["detached"] = deviceConf.detached
+
+    fileSystem.dumpSettings(settings)
 
     -- for k,v in pairs(deviceConf) do
     --   print(k, v)
