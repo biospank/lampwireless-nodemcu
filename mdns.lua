@@ -255,7 +255,7 @@ function query(service, timeout,own_ip,callback)
 
     local mdns_multicast_ip, mdns_port = '224.0.0.251', 5353
     net.multicastJoin(own_ip, mdns_multicast_ip)
-    udpSocket = net.createUDPSocket()
+    local udpSocket = net.createUDPSocket()
     socketMessageQueue:init(udpSocket)
     -- collect responses until timeout
     local answers = { srv = {}, a = {}, aaaa = {}, ptr = {} }

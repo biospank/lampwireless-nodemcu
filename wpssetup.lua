@@ -34,14 +34,17 @@ wps.start(function(status)
         -- print("WPS: " .. cnt .. " attempt...") -- waiting for ip
         if cnt == 20 then
           wpsConnTick:stop()
+          wpsConnTick:unregister()
 
           -- print("WPS: Entering wifi setup...")
+          print("wpssetup wifi: ", node.heap())
           dofile("wifisetup.lc")
 
         end
       else
         -- print("WPS: Connection successful: " .. wifi.sta.getip())
         wpsConnTick:stop()
+        wpsConnTick:unregister()
         -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
         fileSystem.dumpSettings(wifi.sta.getconfig(true))
 

@@ -25,6 +25,7 @@ enduser_setup.start(
     gpio.write(greenLedPin, gpio.LOW)
     activateWifiLed(false)
 
+    print("wifisetup restart: ", node.heap())
     -- print("enduser_setup: Restarting device...")
     tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
       wifi.setmode(wifi.STATION);

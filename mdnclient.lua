@@ -1,4 +1,5 @@
 local mc = dofile("mdns.lc")
+print("mdnclient after mdns: ", node.heap())
 
 --constants
 local service_to_query = '_lampwireless._tcp' --service pattern to search
@@ -26,6 +27,8 @@ local result_handler = function(err, res)
     if lampServerIp and lampServerPort then
       -- print('Lamp server '..lampServerIp..":"..lampServerPort)
       mdnTick:stop()
+      mdnTick:unregister()
+      print("mdnclient mqtt: ", node.heap())
       dofile("mqttsub.lc")
     else
       -- print('Browse attempt returned no matching results')

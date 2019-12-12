@@ -78,12 +78,16 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
     -- print(cnt .. " attempt...") -- waiting for ip
     if cnt == 25 then
       connTick:stop()
+      connTick:unregister()
       -- print("Entering wps setup...")
+      print("_init wps: ", node.heap())
       dofile("wpssetup.lc")
     end
   else
     connTick:stop()
+    connTick:unregister()
     -- print("Connected to wifi as: " .. wifi.sta.getip())
+    print("_init mdn: ", node.heap())
     dofile("mdnclient.lc") -- start mdns discovery
   end
 end)

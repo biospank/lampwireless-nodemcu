@@ -58,8 +58,11 @@ local function sendMessage()
 
     -- print(url)
 
+    print("mqttsub send message: ", node.heap())
+
     http.get(url, nil, function(code, data)
       if (code < 0) then
+        print("mqttsub send message done: ", node.heap())
         -- print("HTTP request failed")
       else
         -- print(code, data)
@@ -80,6 +83,7 @@ function listen(active)
         -- -- print(bouncingTime)
         if bouncingTime == 0 then
           bouncingTime = bouncingTime + 1
+          print("mqttsub listen catch: ", node.heap())
           sendMessage()
         end
       else
@@ -109,6 +113,7 @@ local function conn()
     isMqttAlive = true
     mqttConnectAttempts = 1
 
+    print("mqttsub conn success: ", node.heap())
     -- print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
     client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1)
 
@@ -133,6 +138,7 @@ local function conn()
     else
       mqttConnectAttempts = mqttConnectAttempts + 1
       -- print("Attempt to connect in 3 sec...")
+      print("mqttsub conn attempt: ", node.heap())
       tmr.delay(3000)
       conn()
     end
@@ -158,6 +164,7 @@ local function getLampChipId()
     else
       -- print("Lamp chip id: " .. data)
       lampServerChipId = data
+      print("mqttsub get lamp chip success: ", node.heap())
       conn()
     end
   end)
@@ -170,6 +177,7 @@ local function reconn()
   listen(false)
 
   -- print("Attempt to reconnect in 3 sec...")
+  print("mqttsub reconn attempt: ", node.heap())
   tmr.delay(3000)
   conn()
 end
@@ -179,6 +187,7 @@ local function onMsg(_client, topic, data)
   if data ~= nil then
     -- print(data)
 
+    print("mqttsub message received: ", node.heap())
     deviceConf = sjson.decode(data)
 
     -- for k,v in pairs(deviceConf) do
@@ -190,6 +199,7 @@ end
 local function makeConn()
   collectgarbage()
 
+  print("mqttsub start: ", node.heap())
   mqttBroker = mqtt.Client(deviceId, mqttConf.brokerKeepAlive, mqttConf.brokerUsr, mqttConf.brokerPwd)
   -- Set up the event callbacks
   -- print("Setting up callbacks")
