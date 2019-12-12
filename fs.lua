@@ -10,7 +10,7 @@ function fs.loadSettings()
       line = file.readline()
       if (line ~= nil) then
         k, v = string.match(string.gsub(line,"\n",""), "(%w+)=(.+)")
-        -- print(k, v)
+        -- -- print(k, v)
         _SETTINGS[k] = v
       end
     until not line

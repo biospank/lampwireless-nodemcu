@@ -32,18 +32,18 @@ settings = fileSystem.loadSettings()
 
 if (settings ~= nil) then
   -- for k, v in pairs(settings) do
-  --   print(k .. "=" .. v)
+  --   -- print(k .. "=" .. v)
   -- end
   wifi.sta.config({ssid = settings.ssid, pwd = settings.pwd})
 else
-  print("no settings available")
+  -- print("no settings available")
 end
 
 -- wifi.sta.connect()
 
 -- define a callback function
 function buttonCb()
-  print("Resetting device...")
+  -- print("Resetting device...")
   wifi.sta.clearconfig()
   fileSystem.clearSettings()
   node.restart()
@@ -53,7 +53,7 @@ end
 -- that means, what's registered here is executed upon button event "up"
 gpio.trig(buttonPin, "up", buttonCb)
 
-print("Connecting to wifi...")
+-- print("Connecting to wifi...")
 
 local connTick = tmr.create()
 local ledState = gpio.LOW
@@ -75,20 +75,25 @@ local cnt = 0
 connTick:alarm(500, tmr.ALARM_AUTO, function()
   if wifi.sta.getip() == nil then
     cnt = cnt + 1
-    print(cnt .. " attempt...") -- waiting for ip
+    -- print(cnt .. " attempt...") -- waiting for ip
     if cnt == 25 then
       connTick:stop()
-      print("Entering wps setup...")
+      connTick:unregister()
+      -- print("Entering wps setup...")
+      print("_init wps: ", node.heap())
       dofile("wpssetup.lc")
     end
   else
     connTick:stop()
+    connTick:unregister()
+
     print("Connected to wifi as: " .. wifi.sta.getip())
 
     if ((settings ~= nil) and (settings.detached == true)) then
-      print("detached: ", settings.detached)
+      print("_init mqtt: ", node.heap())
       dofile("mqttsub.lc")
     else
+      print("_init mdn: ", node.heap())
       dofile("mdnclient.lc") -- start mdns discovery
     end
   end
