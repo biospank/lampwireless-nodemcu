@@ -17,7 +17,7 @@ bootLedTick:start()
 
 enduser_setup.start(
   function()
-    print("enduser_setup: Connection successful: " .. wifi.sta.getip())
+    -- print("enduser_setup: Connection successful: " .. wifi.sta.getip())
     -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
     fileSystem.dumpSettings(wifi.sta.getconfig(true))
 
@@ -25,7 +25,7 @@ enduser_setup.start(
     gpio.write(greenLedPin, gpio.LOW)
     activateWifiLed(false)
 
-    print("enduser_setup: Restarting device...")
+    -- print("enduser_setup: Restarting device...")
     tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
       wifi.setmode(wifi.STATION);
       -- wifi.sta.config({ssid = ssid, pwd = pwd, save = true});
@@ -33,7 +33,6 @@ enduser_setup.start(
     end)
   end,
   function(err, str)
-    print("enduser_setup: Err #" .. err .. ": " .. str)
-  end,
-  print -- Lua print function can serve as the debug callback
+    -- print("enduser_setup: Err #" .. err .. ": " .. str)
+  end
 );

@@ -24,20 +24,20 @@ local result_handler = function(err, res)
     lampServerIp, lampServerPort = mc.extractIpAndPortFromResults(res, 1)
 
     if lampServerIp and lampServerPort then
-      print('Lamp server '..lampServerIp..":"..lampServerPort)
+      -- print('Lamp server '..lampServerIp..":"..lampServerPort)
       mdnTick:stop()
       dofile("mqttsub.lc")
     else
-      print('Browse attempt returned no matching results')
+      -- print('Browse attempt returned no matching results')
     end
   else
-    print('no device found in local network. please ensure that they are running and advertising on mdns')
+    -- print('no device found in local network. please ensure that they are running and advertising on mdns')
   end
 end
 
 activateMdnLed(true)
 
 mdnTick:alarm(query_repeat_interval * 1000, tmr.ALARM_AUTO, function()
-  print('Attempt mdns discovery...')
+  -- print('Attempt mdns discovery...')
   mc.query(service_to_query, query_timeout, wifi.sta.getip(), result_handler)
 end)

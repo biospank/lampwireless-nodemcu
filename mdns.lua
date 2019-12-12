@@ -260,14 +260,14 @@ function query(service, timeout,own_ip,callback)
     -- collect responses until timeout
     local answers = { srv = {}, a = {}, aaaa = {}, ptr = {} }
     udpSocket:on("receive", function(s, data, port, ip)
-        -- print(string.format("received '%s' from %s:%d", data, ip, port))
-        print(string.format("received %s bytes from %s:%d", #data, ip, port))
+        -- -- print(string.format("received '%s' from %s:%d", data, ip, port))
+        -- print(string.format("received %s bytes from %s:%d", #data, ip, port))
         if data and (port == mdns_port) then
             mdns_parse(service, data, answers)
             if (browse) then
-                print("Sending "..#answers.ptr.." queries:")
+                -- print("Sending "..#answers.ptr.." queries:")
                 for _, ptr in ipairs(answers.ptr) do
-                    print("  -> "..ptr)
+                    -- print("  -> "..ptr)
                     -- getting an error here: PANIC: unprotected error in call to Lua API (mdnsclient.lua:228: unknown error)
                     -- Maybe it's trying to spam :send too quickly?
                     -- s:send(mdns_port, mdns_multicast_ip, mdns_make_query(ptr))
@@ -290,9 +290,9 @@ function query(service, timeout,own_ip,callback)
         net.multicastLeave(own_ip,mdns_multicast_ip)
 
         local services = {}
-        print("Got "..#answers.srv.." service entries...")
+        -- print("Got "..#answers.srv.." service entries...")
         for k,v in pairs(answers.srv) do
-            print("  Processing  "..k.."  "..v.target.."  "..v.port)
+            -- print("  Processing  "..k.."  "..v.target.."  "..v.port)
             local pos = k:find('%.')
             if (pos and (pos > 1) and (pos < #k)) then
                 local name, svc = k:sub(1, pos - 1), k:sub(pos + 1)
@@ -343,9 +343,9 @@ local extractIpAndPortFromResults = function(results,index)
 
     local result_index = 1
     for k,v in pairs(results) do
-        print(k)
+        -- print(k)
         for k1,v1 in pairs(v) do
-            print('  '..k1..': '..v1)
+            -- print('  '..k1..': '..v1)
             if(k1=="ipv4") then ip = v1 end
             if(k1=="port") then port = v1 end
         end
