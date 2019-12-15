@@ -10,9 +10,6 @@ PIRpin = 3
 
 lampServerIp = nil
 lampServerPort = nil
-lampServerChipId = nil
-deviceType = "pir"
-deviceConf = {} -- {["client"] = "pir", ["mode"] = "alarm", ["delay"] = "5000", ["alert"] = "false", ["r"] = "", ["g"] = "", ["b"] = ""}
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(PIRpin, gpio.INPUT)
@@ -28,11 +25,11 @@ pwm.start(bRgbLedPin)
 wifi.setmode(wifi.STATION)
 
 fileSystem = dofile("fs.lc")
-settings = fileSystem.loadSettings()
+local settings = fileSystem.loadSettings("config.net")
 
 if (settings ~= nil) then
   -- for k, v in pairs(settings) do
-  --   -- print(k .. "=" .. v)
+  --   print(k .. "=" .. v)
   -- end
   wifi.sta.config({ssid = settings.ssid, pwd = settings.pwd})
 else
@@ -45,7 +42,8 @@ end
 function buttonCb()
   -- print("Resetting device...")
   wifi.sta.clearconfig()
-  fileSystem.clearSettings()
+  fileSystem.clearSettings("config.net")
+  fileSystem.clearSettings("detach.conf")
   node.restart()
 end
 
@@ -87,9 +85,9 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
     connTick:stop()
     connTick:unregister()
 
-    print("Connected to wifi as: " .. wifi.sta.getip())
+    local detachConf = fileSystem.loadSettings("detach.conf")
 
-    if ((settings ~= nil) and (settings.detached == true)) then
+    if (detachConf ~= nil) then
       print("_init mqtt: ", node.heap())
       dofile("mqttsub.lc")
     else

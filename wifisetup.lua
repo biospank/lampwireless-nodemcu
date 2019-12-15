@@ -19,7 +19,7 @@ enduser_setup.start(
   function()
     -- print("enduser_setup: Connection successful: " .. wifi.sta.getip())
     -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
-    fileSystem.dumpSettings(wifi.sta.getconfig(true))
+    fileSystem.dumpSettings("config.net", wifi.sta.getconfig(true))
 
     bootLedTick:stop()
     gpio.write(greenLedPin, gpio.LOW)

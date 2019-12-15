@@ -2,9 +2,8 @@
 
 local fs = {}
 local _SETTINGS = {}
-local fileName = "config.net"
 
-function fs.loadSettings()
+function fs.loadSettings(fileName)
   if file.open(fileName, "r") then
     repeat
       line = file.readline()
@@ -23,7 +22,7 @@ function fs.loadSettings()
   end
 end
 
-function fs.dumpSettings(settings)
+function fs.dumpSettings(fileName, settings)
   if file.open(fileName, "w") then
     for k, v in pairs(settings) do
       file.writeline(k .. "=" .. tostring(v))
@@ -33,7 +32,7 @@ function fs.dumpSettings(settings)
   end
 end
 
-function fs.clearSettings()
+function fs.clearSettings(fileName)
   file.remove(fileName)
 end
 

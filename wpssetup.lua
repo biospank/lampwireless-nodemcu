@@ -46,7 +46,7 @@ wps.start(function(status)
         wpsConnTick:stop()
         wpsConnTick:unregister()
         -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
-        fileSystem.dumpSettings(wifi.sta.getconfig(true))
+        fileSystem.dumpSettings("config.net", wifi.sta.getconfig(true))
 
         gpio.write(greenLedPin, gpio.LOW)
         activateWpsLed(false)

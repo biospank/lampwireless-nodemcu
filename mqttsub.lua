@@ -1,6 +1,7 @@
 -- mqttsub.lua
 
 local mqttConf = dofile("broker.lc")
+local detachConf = fileSystem.loadSettings("detach.conf")
 
 local pirTick = tmr.create()
 local isMqttAlive = false
@@ -8,6 +9,9 @@ local mqttBroker = nil
 local deviceId = node.chipid()
 local lampChipRequestAttempts = 1
 local mqttConnectAttempts = 1
+local deviceType = "pir"
+local deviceConf = {} -- {["client"] = "pir", ["mode"] = "alarm", ["delay"] = "5000", ["alert"] = "false", ["r"] = "", ["g"] = "", ["b"] = ""}
+local lampServerChipId = nil
 
 local function mqttBrokerBaseTopic()
   return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId
@@ -46,7 +50,7 @@ local function setOnlineStatus()
 end
 
 local function sendMessage()
-  if ((settings ~= nil) and (settings.detached == true)) then
+  if (detachConf ~= nil) then
     if ((deviceConf.active or "true") == "true") then
       if isMqttAlive == true then
         -- print("Publishing mqtt message in detached mode...")
@@ -155,9 +159,9 @@ local function conn()
 end
 
 local function getLampChipId()
-  if ((settings ~= nil) and (settings.detached == true)) then
-    -- print("Lamp chip id: ", settings.lamp_server_id)
-    lampServerChipId = settings.lamp_server_id
+  if (detachConf ~= nil) then
+    print("Lamp chip id: ", detachConf.serverid)
+    lampServerChipId = detachConf.serverid
     conn()
   else
     -- print("Retrieve lamp server chip id...")
@@ -200,15 +204,36 @@ end
 local function onMsg(_client, topic, data)
   -- print(topic .. ":" )
   if data ~= nil then
-    -- print(data)
+    print(data)
 
     print("mqttsub message received: ", node.heap())
-    deviceConf = sjson.decode(data)
+    local conf = sjson.decode(data)
 
-    settings["lamp_server_id"] = lampServerChipId
-    settings["detached"] = deviceConf.detached
+    if (conf.detached == "true") then -- new conf data
+      if (deviceConf.detached == "false") then -- old conf data
+        fileSystem.dumpSettings("detach.conf", {
+          serverid = lampServerChipId
+        })
 
-    fileSystem.dumpSettings(settings)
+        tmr.delay(1000)
+        node.restart()
+      end
+    else
+      if (deviceConf.detached == "true") then -- old conf data
+        fileSystem.clearSettings("detach.conf")
+
+        tmr.delay(1000)
+        node.restart()
+      end
+    end
+
+    if (conf.active == "false") then -- new conf data
+      if (deviceConf.active == "true") and (deviceConf.detached == "false") then -- old conf data
+        http.get("http://"..lampServerIp..":"..lampServerPort.."/alertoff", nil, nil)
+      end
+    end
+
+    deviceConf = conf
 
     -- for k,v in pairs(deviceConf) do
     --   -- print(k, v)
