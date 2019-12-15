@@ -7,7 +7,7 @@ local query_timeout = 3 -- seconds
 local query_repeat_interval = 6 -- seconds
 local mdnTick = tmr.create()
 
-function activateMdnLed(active)
+local function activateMdnLed(active)
   if active then
     pwm.setduty(rRgbLedPin, 500)
     pwm.setduty(gRgbLedPin, 100)
@@ -22,14 +22,22 @@ end
 -- handler to do some thing useful with mdns query results
 local result_handler = function(err, res)
   if (res) then
-    lampServerIp, lampServerPort = mc.extractIpAndPortFromResults(res, 1)
+    local lampServerIp, lampServerPort = mc.extractIpAndPortFromResults(res, 1)
 
     if lampServerIp and lampServerPort then
       -- print('Lamp server '..lampServerIp..":"..lampServerPort)
       mdnTick:stop()
       mdnTick:unregister()
-      print("mdnclient mqtt: ", node.heap())
-      dofile("mqttsub.lc")
+
+      local settings = fileSystem.loadSettings("config.net")
+
+      settings.serverip = lampServerIp
+      settings.serverport = lampServerPort
+
+      fileSystem.dumpSettings("config.net", settings)
+
+      tmr.delay(1000)
+      node.restart()
     else
       -- print('Browse attempt returned no matching results')
     end

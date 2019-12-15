@@ -2,6 +2,7 @@
 
 local mqttConf = dofile("broker.lc")
 local detachConf = fileSystem.loadSettings("detach.conf")
+local netConf = fileSystem.loadSettings("config.net")
 
 local pirTick = tmr.create()
 local isMqttAlive = false
@@ -66,7 +67,7 @@ local function sendMessage()
 
       -- print("Sending http request...")
 
-      local url = "http://"..lampServerIp..":"..lampServerPort.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "pir").."&delay="..(deviceConf.delay or "5000").."&alert="..(deviceConf.alert or "false").."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
+      local url = "http://"..netConf.serverip..":"..netConf.serverport.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "pir").."&delay="..(deviceConf.delay or "5000").."&alert="..(deviceConf.alert or "false").."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
 
       -- print(url)
 
@@ -165,14 +166,19 @@ local function getLampChipId()
     conn()
   else
     -- print("Retrieve lamp server chip id...")
-    -- print("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid")
+    -- print("http://"..netConf.serverip..":"..netConf.serverport.."/hardware/chipid")
 
-    http.get("http://"..lampServerIp..":"..lampServerPort.."/hardware/chipid", nil, function(code, data)
+    http.get("http://"..netConf.serverip..":"..netConf.serverport.."/hardware/chipid", nil, function(code, data)
       if (code < 0) then
         -- print("HTTP request failed")
         if (lampChipRequestAttempts > 3) then
-          setOnlineStatus()
-          listen(true)
+          netConf.serverip = nil
+          netConf.serverport = nil
+
+          fileSystem.dumpSettings("config.net", netConf)
+
+          tmr.delay(1000)
+          node.restart()
         else
           lampChipRequestAttempts = lampChipRequestAttempts + 1
           -- print("Attempt to get lamp server chip id in 3 sec...")
@@ -229,7 +235,7 @@ local function onMsg(_client, topic, data)
 
     if (conf.active == "false") then -- new conf data
       if (deviceConf.active == "true") and (deviceConf.detached == "false") then -- old conf data
-        http.get("http://"..lampServerIp..":"..lampServerPort.."/alertoff", nil, nil)
+        http.get("http://"..netConf.serverip..":"..netConf.serverport.."/alertoff", nil, nil)
       end
     end
 

@@ -8,9 +8,6 @@ greenLedPin = 7
 buttonPin = 6
 PIRpin = 3
 
-lampServerIp = nil
-lampServerPort = nil
-
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(PIRpin, gpio.INPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
@@ -25,15 +22,15 @@ pwm.start(bRgbLedPin)
 wifi.setmode(wifi.STATION)
 
 fileSystem = dofile("fs.lc")
-local settings = fileSystem.loadSettings("config.net")
+local netConf = fileSystem.loadSettings("config.net")
 
-if (settings ~= nil) then
-  -- for k, v in pairs(settings) do
+if (netConf ~= nil) then
+  -- for k, v in pairs(netConf) do
   --   print(k .. "=" .. v)
   -- end
-  wifi.sta.config({ssid = settings.ssid, pwd = settings.pwd})
+  wifi.sta.config({ssid = netConf.ssid, pwd = netConf.pwd})
 else
-  -- print("no settings available")
+  -- print("no netConf available")
 end
 
 -- wifi.sta.connect()
@@ -85,9 +82,7 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
     connTick:stop()
     connTick:unregister()
 
-    local detachConf = fileSystem.loadSettings("detach.conf")
-
-    if (detachConf ~= nil) then
+    if (netConf.serverip ~= nil) then
       print("_init mqtt: ", node.heap())
       dofile("mqttsub.lc")
     else
