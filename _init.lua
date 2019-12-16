@@ -82,12 +82,8 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
     connTick:stop()
     connTick:unregister()
 
-    if (netConf.serverip ~= nil) then
-      print("_init mqtt: ", node.heap())
-      dofile("mqttsub.lc")
-    else
-      print("_init mdn: ", node.heap())
-      dofile("mdnclient.lc") -- start mdns discovery
-    end
+    print("_init mqtt: ", node.heap())
+    dofile("mqttsub.lc")
+
   end
 end)

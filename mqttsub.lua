@@ -11,7 +11,7 @@ local deviceId = node.chipid()
 local lampChipRequestAttempts = 1
 local mqttConnectAttempts = 1
 local deviceType = "pir"
-local deviceConf = {} -- {["client"] = "pir", ["mode"] = "alarm", ["delay"] = "5000", ["alert"] = "false", ["r"] = "", ["g"] = "", ["b"] = ""}
+local deviceConf = {} -- {["client"] = "pir", ["delay"] = "5000", ["active"] = "true", ["mode"] = "alarm", ["alert"] = "true", ["detached"] = "false", ["r"] = "1000", ["g"] = "323", ["b"] = "0"}
 local lampServerChipId = nil
 
 local function mqttBrokerBaseTopic()
@@ -31,11 +31,11 @@ local function mqttBrokerMessageTopic()
 end
 
 local function offlineMessage()
-  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "offline"}
+  return {["id"] = deviceId, ["active"] = deviceConf.active, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "offline"}
 end
 
 local function onlineMessage()
-  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online"}
+  return {["id"] = deviceId, ["active"] = deviceConf.active, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online"}
 end
 
 local function alertMessage()

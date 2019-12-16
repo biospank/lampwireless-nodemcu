@@ -45,18 +45,11 @@ wps.start(function(status)
         -- print("WPS: Connection successful: " .. wifi.sta.getip())
         wpsConnTick:stop()
         wpsConnTick:unregister()
-        -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
-        fileSystem.dumpSettings("config.net", wifi.sta.getconfig(true))
 
         gpio.write(greenLedPin, gpio.LOW)
-        activateWpsLed(false)
 
-        -- print("WPS: Restarting device...")
-        tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
-          wifi.setmode(wifi.STATION);
-          -- wifi.sta.config({ssid = ssid, pwd = pwd, save = true});
-          node.restart()
-        end)
+        print("wpssetup mdn: ", node.heap())
+        dofile("mdnclient.lc") -- start mdns discovery
 
       end
     end)

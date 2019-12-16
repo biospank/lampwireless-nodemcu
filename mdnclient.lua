@@ -29,14 +29,15 @@ local result_handler = function(err, res)
       mdnTick:stop()
       mdnTick:unregister()
 
-      local settings = fileSystem.loadSettings("config.net")
+      -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
+      local configs = wifi.sta.getconfig(true)
 
-      settings.serverip = lampServerIp
-      settings.serverport = lampServerPort
+      configs.serverip = lampServerIp
+      configs.serverport = lampServerPort
 
-      fileSystem.dumpSettings("config.net", settings)
+      fileSystem.dumpSettings("config.net", configs)
 
-      tmr.delay(1000)
+      tmr.delay(2000)
       node.restart()
     else
       -- print('Browse attempt returned no matching results')

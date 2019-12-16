@@ -18,20 +18,10 @@ bootLedTick:start()
 enduser_setup.start(
   function()
     -- print("enduser_setup: Connection successful: " .. wifi.sta.getip())
-    -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
-    fileSystem.dumpSettings("config.net", wifi.sta.getconfig(true))
 
-    bootLedTick:stop()
-    gpio.write(greenLedPin, gpio.LOW)
-    activateWifiLed(false)
+    print("wifisetup mdn: ", node.heap())
+    dofile("mdnclient.lc") -- start mdns discovery
 
-    print("wifisetup restart: ", node.heap())
-    -- print("enduser_setup: Restarting device...")
-    tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
-      wifi.setmode(wifi.STATION);
-      -- wifi.sta.config({ssid = ssid, pwd = pwd, save = true});
-      node.restart()
-    end)
   end,
   function(err, str)
     -- print("enduser_setup: Err #" .. err .. ": " .. str)
