@@ -11,7 +11,7 @@ local deviceId = node.chipid()
 local lampChipRequestAttempts = 1
 local mqttConnectAttempts = 1
 local deviceType = "pir"
-local deviceConf = {} -- {["client"] = "pir", ["delay"] = "5000", ["active"] = "true", ["mode"] = "alarm", ["alert"] = "true", ["detached"] = "false", ["r"] = "1000", ["g"] = "323", ["b"] = "0"}
+local deviceConf = {}
 local lampServerChipId = nil
 
 local function mqttBrokerBaseTopic()
@@ -31,15 +31,15 @@ local function mqttBrokerMessageTopic()
 end
 
 local function offlineMessage()
-  return {["id"] = deviceId, ["active"] = deviceConf.active, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "offline"}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "offline", ["active"] = (deviceConf.active or "true"), ["delay"] = (deviceConf.delay or "5000"), ["detached"] = (deviceConf.delay or "false"), ["r"] = (deviceConf.r or "1000"), ["g"] = (deviceConf.g or "323"), ["b"] = (deviceConf.b or "0")}
 end
 
 local function onlineMessage()
-  return {["id"] = deviceId, ["active"] = deviceConf.active, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online"}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online"}
 end
 
 local function alertMessage()
-  return {["mode"] = (deviceConf.mode or "alarm"), ["client"] = (deviceConf.client or "pir"), ["delay"] = (deviceConf.delay or "5000"), ["alert"] = (deviceConf.alert or "false"), ["r"] = (deviceConf.r or ""), ["g"] = (deviceConf.g or ""), ["b"] = (deviceConf.b or "")}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["mode"] = (deviceConf.mode or "alarm"), ["type"] = (deviceConf.type or "pir"), ["delay"] = (deviceConf.delay or "5000"), ["alert"] = (deviceConf.alert or "false"), ["r"] = (deviceConf.r or "1000"), ["g"] = (deviceConf.g or "323"), ["b"] = (deviceConf.b or "0")}
 end
 
 local function setOnlineStatus()
@@ -55,14 +55,14 @@ local function sendMessage()
     if ((deviceConf.active or "true") == "true") then
       if isMqttAlive == true then
         -- print("Publishing mqtt message in detached mode...")
-        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
+        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 2, 0)
       end
     end
   else
     if ((deviceConf.active or "true") == "true") then
       if isMqttAlive == true then
         print("Publishing mqtt message...")
-        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 1, 1)
+        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 2, 0)
       end
 
       -- print("Sending http request...")
@@ -128,12 +128,13 @@ local function conn()
     mqttConnectAttempts = 1
 
     print("mqttsub conn success: ", node.heap())
-    -- print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
+
+    print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
     client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1)
 
-    -- print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
-    -- subscribe topic with qos = 0
-    client:subscribe(mqttBrokerConfTopic(), 0)
+    print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
+    -- subscribe topic with qos = 1
+    client:subscribe(mqttBrokerConfTopic(), 1)
 
     setOnlineStatus()
     listen(true)
