@@ -31,11 +31,11 @@ local function mqttBrokerMessageTopic()
 end
 
 local function offlineMessage()
-  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["name"] = (deviceConf.name), ["type"] = deviceType, ["status"] = "offline", ["active"] = ((deviceConf.active ~= nil and deviceConf.active == true) or false), ["delay"] = (deviceConf.delay or "5000"), ["detached"] = ((deviceConf.detached == true) or false), ["r"] = (deviceConf.r or "1000"), ["g"] = (deviceConf.g or "323"), ["b"] = (deviceConf.b or "0")}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["name"] = (deviceConf.name), ["type"] = deviceType, ["status"] = "offline", ["active"] = ((deviceConf.active ~= nil and deviceConf.active == true) or false), ["delay"] = (deviceConf.delay or "5000"), ["r"] = (deviceConf.r or "1000"), ["g"] = (deviceConf.g or "323"), ["b"] = (deviceConf.b or "0")}
 end
 
 local function onlineMessage()
-  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online"}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online", ["detached"] = ((detachConf ~= nil) or false)}
 end
 
 local function alertMessage()
@@ -217,7 +217,7 @@ local function onMsg(_client, topic, data)
     local conf = sjson.decode(data)
 
     if (conf.detached == true) then -- new conf data
-      if (deviceConf.detached == false) then -- old conf data
+      if (detachConf == nil) then -- old conf data
         fileSystem.dumpSettings("detach.conf", {
           serverid = lampServerChipId
         })
@@ -226,7 +226,7 @@ local function onMsg(_client, topic, data)
         node.restart()
       end
     else
-      if (deviceConf.detached == true) then -- old conf data
+      if (detachConf ~= nil) then -- old conf data
         fileSystem.clearSettings("detach.conf")
 
         tmr.delay(1000)
@@ -235,7 +235,7 @@ local function onMsg(_client, topic, data)
     end
 
     if (conf.active == false) then -- new conf data
-      if (deviceConf.active == true) and (deviceConf.detached == false) then -- old conf data
+      if (deviceConf.active == true) and (detachConf == nil) then -- old conf data
         http.get("http://"..netConf.serverip..":"..netConf.serverport.."/alertoff", nil, nil)
       end
     end
