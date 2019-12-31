@@ -2,6 +2,7 @@
 
 local mqttConf = dofile("broker.lc")
 local detachConf = fileSystem.loadSettings("detach.conf")
+local lockConf = fileSystem.loadSettings("lock.conf")
 local netConf = fileSystem.loadSettings("config.net")
 
 local pirTick = tmr.create()
@@ -35,7 +36,7 @@ local function offlineMessage()
 end
 
 local function onlineMessage()
-  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online", ["detached"] = ((detachConf ~= nil) or false)}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online", ["detached"] = ((detachConf ~= nil) or false), ["locked"] = (deviceConf.locked or false)}
 end
 
 local function alertMessage()
@@ -129,12 +130,14 @@ local function conn()
 
     print("mqttsub conn success: ", node.heap())
 
-    print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
-    client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1)
-
     print("Subscribing to topic " .. mqttBrokerConfTopic() .. "...")
     -- subscribe topic with qos = 1
     client:subscribe(mqttBrokerConfTopic(), 1)
+
+    tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
+      print("Publishing online message to topic: " .. mqttBrokerStatusTopic() .. "...")
+      client:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1)
+    end)
 
     setOnlineStatus()
     listen(true)
@@ -215,6 +218,18 @@ local function onMsg(_client, topic, data)
 
     print("mqttsub message received: ", node.heap())
     local conf = sjson.decode(data)
+
+    if (conf.locked == true) then -- new conf data
+      if (lockConf == nil) then -- old conf data
+        fileSystem.dumpSettings("lock.conf", {
+          lockid = conf.lockid
+        })
+      end
+    else
+      if (lockConf ~= nil) then -- old conf data
+        fileSystem.clearSettings("lock.conf")
+      end
+    end
 
     if (conf.detached == true) then -- new conf data
       if (detachConf == nil) then -- old conf data

@@ -41,6 +41,9 @@ function buttonCb()
   wifi.sta.clearconfig()
   fileSystem.clearSettings("config.net")
   fileSystem.clearSettings("detach.conf")
+  fileSystem.clearSettings("lock.conf")
+
+  tmr.delay(1000)
   node.restart()
 end
 
@@ -71,7 +74,7 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
   if wifi.sta.getip() == nil then
     cnt = cnt + 1
     -- print(cnt .. " attempt...") -- waiting for ip
-    if cnt == 25 then
+    if cnt == 30 then
       connTick:stop()
       connTick:unregister()
       -- print("Entering wps setup...")
