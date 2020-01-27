@@ -69,6 +69,6 @@ wps.start(function(status)
 
   wps.disable()
 
-  -- print("WPS: Entering wifi setup...")
+  print("WPS: Entering wifi setup...")
   dofile("wifisetup.lc")
 end)

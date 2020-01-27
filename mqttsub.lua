@@ -5,15 +5,22 @@ local detachConf = fileSystem.loadSettings("detach.conf")
 local lockConf = fileSystem.loadSettings("lock.conf")
 local netConf = fileSystem.loadSettings("config.net")
 
-local pirTick = tmr.create()
+local batteryMonitorTick = tmr.create()
 local isMqttAlive = false
 local mqttBroker = nil
 local deviceId = node.chipid()
 local lampChipRequestAttempts = 1
 local mqttConnectAttempts = 1
-local deviceType = "pir"
+local deviceType = "sos"
 local deviceConf = {}
 local lampServerChipId = nil
+local fullyChargeThreshold = 1024
+
+local function readBatteryPercentage()
+  math.floor((adc.read(0) / fullyChargeThreshold) * 100)
+end
+
+local batteryPercentage = readBatteryPercentage()
 
 local function mqttBrokerBaseTopic()
   return "lampwireless/" .. lampServerChipId .. "/device/" .. deviceId
@@ -36,11 +43,11 @@ local function offlineMessage()
 end
 
 local function onlineMessage()
-  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online", ["detached"] = ((detachConf ~= nil) or false), ["locked"] = (deviceConf.locked or false)}
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["status"] = "online", ["detached"] = ((detachConf ~= nil) or false), ["locked"] = (deviceConf.locked or false), ["battery"] = batteryPercentage}
 end
 
-local function alertMessage()
-  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["mode"] = (deviceConf.mode or "alarm"), ["type"] = (deviceConf.type or "pir"), ["delay"] = (deviceConf.delay or "5000"), ["alert"] = ((deviceConf.alert ~= nil and deviceConf.alert == true) or false), ["r"] = (deviceConf.r or "1000"), ["g"] = (deviceConf.g or "323"), ["b"] = (deviceConf.b or "0")}
+local function sosMessage()
+  return {["id"] = deviceId, ["serverId"] = lampServerChipId, ["type"] = deviceType, ["mode"] = (deviceConf.mode or "alarm"), ["type"] = (deviceConf.type or "sos"), ["delay"] = (deviceConf.delay or "5000"), ["alert"] = ((deviceConf.alert ~= nil and deviceConf.alert == true) or false), ["r"] = (deviceConf.r or "1000"), ["g"] = (deviceConf.g or "323"), ["b"] = (deviceConf.b or "0")}
 end
 
 local function setOnlineStatus()
@@ -56,19 +63,19 @@ local function sendMessage()
     if (deviceConf.active == true) then
       if isMqttAlive == true then
         -- print("Publishing mqtt message in detached mode...")
-        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 2, 0)
+        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(sosMessage()), 2, 0)
       end
     end
   else
     if (deviceConf.active == true) then
       if isMqttAlive == true then
         print("Publishing mqtt message...")
-        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(alertMessage()), 2, 0)
+        mqttBroker:publish(mqttBrokerMessageTopic(), sjson.encode(sosMessage()), 2, 0)
       end
 
       -- print("Sending http request...")
 
-      local url = "http://"..netConf.serverip..":"..netConf.serverport.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "pir").."&delay="..(deviceConf.delay or "5000").."&alert="..tostring(deviceConf.alert or false).."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
+      local url = "http://"..netConf.serverip..":"..netConf.serverport.."/notify?mode="..(deviceConf.mode or "alarm").."&client="..(deviceConf.client or "sos").."&delay="..(deviceConf.delay or "5000").."&alert="..tostring(deviceConf.alert or false).."&r="..(deviceConf.r or "").."&g="..(deviceConf.g or "").."&b="..(deviceConf.b or "")
 
       -- print(url)
 
@@ -87,34 +94,25 @@ local function sendMessage()
   end
 end
 
+-- define a callback function
+local function buttonCb()
+  print("sos button pressed!")
+  sendMessage()
+end
 
-function listen(active)
-  local bouncingTime = 0
+-- register a button event
+-- that means, what's registered here is executed upon button event "up"
+gpio.trig(buttonPin, "up", buttonCb)
 
+local function monitorBattery(active)
   if active then
-    pirTick:alarm(500, tmr.ALARM_AUTO, function()
-      if gpio.read(PIRpin) == 1 then
-        -- -- print("move detected!")
-        -- -- print(bouncingTime)
-        if bouncingTime == 0 then
-          bouncingTime = bouncingTime + 1
-          print("mqttsub listen catch: ", node.heap())
-          sendMessage()
-        end
-      else
-        -- -- print("no movement...")
-        -- -- print(bouncingTime)
-        if bouncingTime > 0 then
-          bouncingTime = bouncingTime + 1
-        end
-
-        if bouncingTime > 5 then
-          bouncingTime = 0
-        end
-      end
+    -- 5 min.
+    batteryMonitorTick:alarm(320000, tmr.ALARM_AUTO, function()
+      batteryPercentage = readBatteryPercentage()
+      mqttBroker:publish(mqttBrokerStatusTopic(), sjson.encode(onlineMessage()), 1, 1)
     end)
   else
-    pirTick:stop()
+    batteryMonitorTick:stop()
   end
 
 end
@@ -140,19 +138,19 @@ local function conn()
     end)
 
     setOnlineStatus()
-    listen(true)
+    monitorBattery(true)
 
   end,
   function(client, reason)
     -- print("Failed to connect: " .. reason)
     isMqttAlive = false
-    listen(false)
+    monitorBattery(false)
 
     if (mqttConnectAttempts > 3) then
       -- print("Max connection attempts reached, giving up...")
       mqttConnectAttempts = 1
       setOnlineStatus()
-      listen(true)
+      monitorBattery(true)
     else
       mqttConnectAttempts = mqttConnectAttempts + 1
       -- print("Attempt to connect in 3 sec...")
@@ -203,7 +201,7 @@ end
 local function reconn()
   -- print("Disconnected!")
   isMqttAlive = false
-  listen(false)
+  monitorBattery(false)
 
   -- print("Attempt to reconnect in 3 sec...")
   print("mqttsub reconn attempt: ", node.heap())

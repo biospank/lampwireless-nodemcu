@@ -1,16 +1,17 @@
--- enduser_setup file gpio http mdns mqtt net node pwm sjson tmr uart wifi wps
+-- adc enduser_setup file gpio http mdns mqtt net node pwm sjson tmr uart wifi wps
+-- math.floor((adc.read(0) / 1024) * 100)
 
 --init.lua
 rRgbLedPin = 5
 gRgbLedPin = 1
 bRgbLedPin = 2
 greenLedPin = 7
-buttonPin = 6
-PIRpin = 3
+resetPin = 6
+buttonPin = 4
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
-gpio.mode(PIRpin, gpio.INPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
+gpio.mode(resetPin, gpio.INT, gpio.PULLUP)
 
 pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
 pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
@@ -36,7 +37,7 @@ end
 -- wifi.sta.connect()
 
 -- define a callback function
-function buttonCb()
+function resetCb()
   -- print("Resetting device...")
   wifi.sta.clearconfig()
   fileSystem.clearSettings("config.net")
@@ -47,9 +48,9 @@ function buttonCb()
   node.restart()
 end
 
--- register a button event
--- that means, what's registered here is executed upon button event "up"
-gpio.trig(buttonPin, "up", buttonCb)
+-- register a reset event
+-- that means, what's registered here is executed upon reset event "up"
+gpio.trig(resetPin, "up", resetCb)
 
 -- print("Connecting to wifi...")
 
