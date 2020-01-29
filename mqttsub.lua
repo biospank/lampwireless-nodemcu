@@ -176,10 +176,7 @@ local function getLampChipId()
       if (code < 0) then
         -- print("HTTP request failed")
         if (lampChipRequestAttempts > 3) then
-          netConf.serverip = nil
-          netConf.serverport = nil
-
-          fileSystem.dumpSettings("config.net", netConf)
+          fileSystem.clearSettings("config.net")
 
           tmr.delay(1000)
           node.restart()
