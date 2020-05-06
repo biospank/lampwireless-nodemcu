@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,PWS
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,wps
 
 --init.lua
 firmwareVersion = "1.0.0"
