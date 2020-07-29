@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,wps
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,wps,ws2812
 
 --init.lua
 firmwareVersion = "1.0.0"
@@ -12,12 +12,16 @@ relayPin = 6
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
 gpio.mode(relayPin, gpio.OUTPUT)
-pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
-pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
-pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
-pwm.start(rRgbLedPin)
-pwm.start(gRgbLedPin)
-pwm.start(bRgbLedPin)
+-- pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
+-- pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
+-- pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
+-- pwm.start(rRgbLedPin)
+-- pwm.start(gRgbLedPin)
+-- pwm.start(bRgbLedPin)
+
+-- ws2812 library (remove pwm library)
+ws2812.init() -- pin data D4
+ws2812.write(string.char(0, 0, 255)) -- da rimuovere
 
 -- define a callback function
 function buttonCb()

@@ -2,13 +2,15 @@
 
 function activateWifiLed(active)
   if active then
-    pwm.setduty(rRgbLedPin, 0)
-    pwm.setduty(gRgbLedPin, 1023)
-    pwm.setduty(bRgbLedPin, 1023)
+    ws2812.write(string.char(0, 255, 0))
+    -- pwm.setduty(rRgbLedPin, 0)
+    -- pwm.setduty(gRgbLedPin, 1023)
+    -- pwm.setduty(bRgbLedPin, 1023)
   else
-    pwm.setduty(rRgbLedPin, 1023)
-    pwm.setduty(gRgbLedPin, 1023)
-    pwm.setduty(bRgbLedPin, 1023)
+    ws2812.write(string.char(0, 0, 0))
+    -- pwm.setduty(rRgbLedPin, 1023)
+    -- pwm.setduty(gRgbLedPin, 1023)
+    -- pwm.setduty(bRgbLedPin, 1023)
   end
 end
 
