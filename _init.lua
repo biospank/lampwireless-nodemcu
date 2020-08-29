@@ -27,10 +27,29 @@ ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 strip_buffer = ws2812.newBuffer(7, 3)
 ws2812_effects.init(strip_buffer)
 
+wifi.setmode(wifi.STATION)
+
+fileSystem = dofile("fs.lc")
+local netConf = fileSystem.loadSettings("config.net")
+
+if (netConf ~= nil) then
+  -- for k, v in pairs(netConf) do
+  --   print(k .. "=" .. v)
+  -- end
+  wifi.sta.config({ssid = netConf.ssid, pwd = netConf.pwd})
+else
+  -- print("no netConf available")
+end
+
+-- wifi.sta.connect()
+
 -- define a callback function
 function buttonCb()
-  print("Resetting device...")
+  -- print("Resetting device...")
   wifi.sta.clearconfig()
+  fileSystem.clearSettings("config.net")
+
+  tmr.delay(1000)
   node.restart()
 end
 

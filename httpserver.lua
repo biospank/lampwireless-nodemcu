@@ -7,13 +7,13 @@ function turnAlertOn(params, temporary)
   local count = 0
   local running, _mode = rgbLedTick:state()
 
-  red = tonumber(params.r)
-  green = tonumber(params.g)
-  blue = tonumber(params.b)
+  red = tonumber(params.r255)
+  green = tonumber(params.g255)
+  blue = tonumber(params.b255)
 
-  print("Red: " .. (1023 - red))
-  print("Green: " .. (1023 - green))
-  print("Blue: " .. (1023 - blue))
+  print("Red: " .. red)
+  print("Green: " .. green)
+  print("Blue: " .. blue)
 
   if not running then
     rgbLedTick:alarm(500, tmr.ALARM_AUTO, function()

@@ -5,7 +5,7 @@ local wpsConnTick = tmr.create()
 
 function activateWpsLed(active)
   if active then
-    ws2812_effects.set_speed(210)
+    ws2812_effects.set_speed(150)
     ws2812_effects.set_brightness(255)
     ws2812_effects.set_color(0,0,255)
     ws2812_effects.set_mode("color_wipe")
@@ -52,7 +52,10 @@ wps.start(function(status)
       else
         print("WPS: Connection successful: " .. wifi.sta.getip())
         wpsConnTick:stop()
-        ssid, pwd, _bssid = wifi.sta.getconfig(false)
+        -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
+        local configs = wifi.sta.getconfig(true)
+
+        fileSystem.dumpSettings("config.net", configs)
 
         gpio.write(greenLedPin, gpio.LOW)
         activateWpsLed(false)
