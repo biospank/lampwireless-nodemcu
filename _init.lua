@@ -20,9 +20,12 @@ gpio.mode(relayPin, gpio.OUTPUT)
 -- pwm.start(bRgbLedPin)
 
 -- ws2812 library (remove pwm library)
-ws2812.init() -- pin data D4
+ws2812.init(ws2812.MODE_SINGLE) -- pin data D4
 -- turn off leds
 ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+
+strip_buffer = ws2812.newBuffer(7, 3)
+ws2812_effects.init(strip_buffer)
 
 -- define a callback function
 function buttonCb()

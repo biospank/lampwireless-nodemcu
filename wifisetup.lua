@@ -2,11 +2,18 @@
 
 function activateWifiLed(active)
   if active then
-    ws2812.write(string.char(0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+    ws2812_effects.set_speed(210)
+    ws2812_effects.set_brightness(255)
+    ws2812_effects.set_color(0,255,0)
+    ws2812_effects.set_mode("color_wipe")
+    ws2812_effects.start()
+
+    -- ws2812.write(string.char(0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     -- pwm.setduty(rRgbLedPin, 0)
     -- pwm.setduty(gRgbLedPin, 1023)
     -- pwm.setduty(bRgbLedPin, 1023)
   else
+    ws2812_effects.stop()
     ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     -- pwm.setduty(rRgbLedPin, 1023)
     -- pwm.setduty(gRgbLedPin, 1023)
