@@ -30,12 +30,12 @@ function turnAlertOn(params, temporary)
       end
 
       if ledState == gpio.HIGH then
-        ws2812.write(string.char(green, red, blue))
+        ws2812.write(string.char(green, red, blue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         -- pwm.setduty(rRgbLedPin, 1023 - red)
         -- pwm.setduty(gRgbLedPin, 1023 - green)
         -- pwm.setduty(bRgbLedPin, 1023 - blue)
       else
-        ws2812.write(string.char(0, 0, 0))
+        ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         -- pwm.setduty(rRgbLedPin, 1023)
         -- pwm.setduty(gRgbLedPin, 1023)
         -- pwm.setduty(bRgbLedPin, 1023)
@@ -53,7 +53,7 @@ function turnAlertOff()
 
   if running then
     rgbLedTick:stop()
-    ws2812.write(string.char(0, 0, 0))
+    ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     -- pwm.setduty(rRgbLedPin, 1023)
     -- pwm.setduty(gRgbLedPin, 1023)
     -- pwm.setduty(bRgbLedPin, 1023)
@@ -68,6 +68,7 @@ local function flashLight(mode, ledState)
         gpio.write(relayPin, gpio.LOW)
       end)
     else
+      -- ws2812.write(string.char(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255))
       gpio.write(relayPin, gpio.HIGH)
     end
   else
@@ -77,6 +78,7 @@ local function flashLight(mode, ledState)
         gpio.write(relayPin, gpio.LOW)
       end)
     else
+      -- ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
       gpio.write(relayPin, gpio.LOW)
     end
   end
@@ -104,6 +106,7 @@ function turnRelayOn(vars)
       else
         print("Turning off gpio 2..")
         relayTick:stop()
+        -- ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         gpio.write(relayPin, gpio.LOW)
 
         print("alert " .. params.alert)

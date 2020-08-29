@@ -4,12 +4,12 @@ local wpsConnTick = tmr.create()
 
 function activateWpsLed(active)
   if active then
-    ws2812.write(string.char(0, 0, 255))
+    ws2812.write(string.char(0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     -- pwm.setduty(rRgbLedPin, 1023)
     -- pwm.setduty(gRgbLedPin, 1023)
     -- pwm.setduty(bRgbLedPin, 0)
   else
-    ws2812.write(string.char(0, 0, 0))
+    ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     -- pwm.setduty(rRgbLedPin, 1023)
     -- pwm.setduty(gRgbLedPin, 1023)
     -- pwm.setduty(bRgbLedPin, 1023)

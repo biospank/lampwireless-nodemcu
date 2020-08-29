@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,wps,ws2812
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,wps,ws2812,ws2812_effects
 
 --init.lua
 firmwareVersion = "1.0.0"
@@ -21,7 +21,8 @@ gpio.mode(relayPin, gpio.OUTPUT)
 
 -- ws2812 library (remove pwm library)
 ws2812.init() -- pin data D4
-ws2812.write(string.char(0, 0, 255)) -- da rimuovere
+-- turn off leds
+ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 -- define a callback function
 function buttonCb()
