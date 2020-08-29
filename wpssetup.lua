@@ -42,7 +42,10 @@ wps.start(function(status)
       else
         print("WPS: Connection successful: " .. wifi.sta.getip())
         wpsConnTick:stop()
-        ssid, pwd, _bssid = wifi.sta.getconfig(false)
+        -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
+        local configs = wifi.sta.getconfig(true)
+
+        fileSystem.dumpSettings("config.net", configs)
 
         gpio.write(greenLedPin, gpio.LOW)
         activateWpsLed(false)

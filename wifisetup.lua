@@ -18,7 +18,11 @@ bootLedTick:start()
 enduser_setup.start(
   function()
     print("enduser_setup: Connection successful: " .. wifi.sta.getip())
-    ssid, pwd, _bssid = wifi.sta.getconfig(false)
+    -- ssid, pwd, _bssid = wifi.sta.getconfig(false)
+
+    local configs = wifi.sta.getconfig(true)
+
+    fileSystem.dumpSettings("config.net", configs)
 
     bootLedTick:stop()
     gpio.write(greenLedPin, gpio.LOW)
