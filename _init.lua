@@ -60,18 +60,26 @@ end
 -- wifi.sta.connect()
 
 -- define a callback function
-function buttonCb()
-  -- print("Resetting device...")
-  wifi.sta.clearconfig()
-  fileSystem.clearSettings("config.net")
+function debounce ()
+  -- print('button pin state before alarm '..gpio.read(buttonPin))
 
-  tmr.delay(1000)
-  node.restart()
+  tmr.create():alarm(5000, tmr.ALARM_SINGLE, function()
+    -- print('button pin state '..gpio.read(buttonPin))
+    if gpio.read(buttonPin) == 0 then
+      -- print('Button has been pressed for 5s')
+      -- print("Resetting device...")
+      wifi.sta.clearconfig()
+      fileSystem.clearSettings("config.net")
+
+      tmr.delay(1000)
+      node.restart()
+    end
+  end)
 end
 
 -- register a button event
--- that means, what's registered here is executed upon button event "up"
-gpio.trig(buttonPin, "up", buttonCb)
+-- that means, what's registered here is executed upon button event "down"
+gpio.trig(buttonPin, "down", debounce)
 
 print("Connecting to wifi...")
 
