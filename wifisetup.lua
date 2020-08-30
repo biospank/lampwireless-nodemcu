@@ -24,7 +24,7 @@ end
 activateWifiLed(true)
 bootLedTick:start()
 
-print("wifisetup start: ", node.heap())
+-- print("wifisetup start: ", node.heap())
 
 enduser_setup.start(
   function()

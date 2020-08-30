@@ -29,7 +29,7 @@ wifi.setmode(wifi.STATION)
 activateWpsLed(true)
 wps.enable()
 
-print("wpssetup start: ", node.heap())
+-- print("wpssetup start: ", node.heap())
 
 wps.start(function(status)
   if status == wps.SUCCESS then

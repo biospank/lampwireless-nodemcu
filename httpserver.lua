@@ -16,7 +16,7 @@ end
 local function turnAlertOff()
   local running, _mode = rgbLedTick:state()
 
-  print("httpserver turnAlertOff: ", node.heap())
+  -- print("httpserver turnAlertOff: ", node.heap())
 
   if running then
     rgbLedTick:stop()
@@ -41,7 +41,7 @@ local function turnAlertOn(params, temporary)
   -- print("Blue: " .. blue)
 
   if not running then
-    print("httpserver turnAlertOn: ", node.heap())
+    -- print("httpserver turnAlertOn: ", node.heap())
 
     rgbLedTick:alarm(500, tmr.ALARM_AUTO, function()
       if temporary and count > 6 then
@@ -102,7 +102,7 @@ end
 local function turnRelayOn(vars)
   -- print("Turning on gpio 2..")
 
-  print("httpserver turnRelayOn: ", node.heap())
+  -- print("httpserver turnRelayOn: ", node.heap())
 
   local params = collectQueryStringParams(vars)
   local times = tonumber((params.delay) or 5000) * 2 / 1000
@@ -151,7 +151,7 @@ srv:listen(80, function(conn)
   local url=""
   local vars=""
 
-  print("httpserver start: ", node.heap())
+  -- print("httpserver start: ", node.heap())
 
   conn:on("receive", function(conn, payload)
     _, _, method, url, vars = string.find(payload, "([A-Z]+) /([^?]*)%??(.*) HTTP")
