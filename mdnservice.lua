@@ -1,7 +1,7 @@
 local mdnsTick = tmr.create()
 
 mdnsTick:alarm(20000, tmr.ALARM_AUTO, function()
-  print("Registering mdn service...")
+  -- print("Registering mdn service...")
 
   mdns.register(
     "lampwireless", {

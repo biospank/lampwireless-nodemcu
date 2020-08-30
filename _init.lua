@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,pwm,wps
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,wps,ws2812,ws2812_effects
 
 --init.lua
 firmwareVersion = "1.0.0"
@@ -12,12 +12,36 @@ relayPin = 6
 gpio.mode(greenLedPin, gpio.OUTPUT)
 gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
 gpio.mode(relayPin, gpio.OUTPUT)
-pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
-pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
-pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
-pwm.start(rRgbLedPin)
-pwm.start(gRgbLedPin)
-pwm.start(bRgbLedPin)
+-- pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
+-- pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
+-- pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
+-- pwm.start(rRgbLedPin)
+-- pwm.start(gRgbLedPin)
+-- pwm.start(bRgbLedPin)
+
+-- ws2812 library (remove pwm library)
+ws2812.init(ws2812.MODE_SINGLE) -- pin data D4
+-- turn off leds
+ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+
+strip_buffer = ws2812.newBuffer(7, 3)
+ws2812_effects.init(strip_buffer)
+
+wifi.setmode(wifi.STATION)
+
+fileSystem = dofile("fs.lc")
+local netConf = fileSystem.loadSettings("config.net")
+
+if (netConf ~= nil) then
+  -- for k, v in pairs(netConf) do
+  --   print(k .. "=" .. v)
+  -- end
+  wifi.sta.config({ssid = netConf.ssid, pwd = netConf.pwd})
+else
+  -- print("no netConf available")
+end
+
+-- wifi.sta.connect()
 
 wifi.setmode(wifi.STATION)
 
@@ -53,6 +77,8 @@ print("Connecting to wifi...")
 
 local connTick = tmr.create()
 local ledState = gpio.LOW
+
+-- print("_init start: ", node.heap())
 
 bootLedTick = tmr.create()
 

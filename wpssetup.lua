@@ -2,27 +2,39 @@
 
 local wpsConnTick = tmr.create()
 
-function activateWpsLed(active)
+
+local function activateWpsLed(active)
   if active then
-    pwm.setduty(rRgbLedPin, 1023)
-    pwm.setduty(gRgbLedPin, 1023)
-    pwm.setduty(bRgbLedPin, 0)
+    ws2812_effects.set_speed(150)
+    ws2812_effects.set_brightness(255)
+    ws2812_effects.set_color(0,0,255)
+    ws2812_effects.set_mode("color_wipe")
+    ws2812_effects.start()
+
+    -- ws2812.write(string.char(0, 0, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+    -- pwm.setduty(rRgbLedPin, 1023)
+    -- pwm.setduty(gRgbLedPin, 1023)
+    -- pwm.setduty(bRgbLedPin, 0)
   else
-    pwm.setduty(rRgbLedPin, 1023)
-    pwm.setduty(gRgbLedPin, 1023)
-    pwm.setduty(bRgbLedPin, 1023)
+    ws2812_effects.stop()
+    ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+    -- pwm.setduty(rRgbLedPin, 1023)
+    -- pwm.setduty(gRgbLedPin, 1023)
+    -- pwm.setduty(bRgbLedPin, 1023)
   end
 end
 
 wifi.setmode(wifi.STATION)
-bootLedTick:stop()
+-- bootLedTick:stop()
 activateWpsLed(true)
 wps.enable()
+
+-- print("wpssetup start: ", node.heap())
 
 wps.start(function(status)
   if status == wps.SUCCESS then
     wps.disable()
-    print("WPS: Success, connecting to AP...")
+    -- print("WPS: Success, connecting to AP...")
     wifi.sta.connect()
 
     local cnt = 0
@@ -31,16 +43,16 @@ wps.start(function(status)
 
       if wifi.sta.getip() == nil then
         cnt = cnt + 1
-        print("WPS: " .. cnt .. " attempt...") -- waiting for ip
+        -- print("WPS: " .. cnt .. " attempt...") -- waiting for ip
         if cnt == 20 then
           wpsConnTick:stop()
 
-          print("WPS: Entering wifi setup...")
+          -- print("WPS: Entering wifi setup...")
           dofile("wifisetup.lc")
 
         end
       else
-        print("WPS: Connection successful: " .. wifi.sta.getip())
+        -- print("WPS: Connection successful: " .. wifi.sta.getip())
         wpsConnTick:stop()
         -- ssid, pwd, _bssid_set, _bssid = wifi.sta.getconfig(false)
         local configs = wifi.sta.getconfig(true)
@@ -50,10 +62,10 @@ wps.start(function(status)
         gpio.write(greenLedPin, gpio.LOW)
         activateWpsLed(false)
 
-        print("WPS: Restarting device...")
+        -- print("WPS: Restarting device...")
         tmr.create():alarm(3000, tmr.ALARM_SINGLE, function()
           wifi.setmode(wifi.STATION);
-          wifi.sta.config({ssid = ssid, pwd = pwd, save = true});
+          wifi.sta.config({ssid = configs.ssid, pwd = configs.pwd, save = true});
           node.restart()
         end)
 
@@ -62,15 +74,15 @@ wps.start(function(status)
 
     return
   elseif status == wps.FAILED then
-    print("WPS: Failed")
+    -- print("WPS: Failed")
   elseif status == wps.TIMEOUT then
-    print("WPS: Timeout")
+    -- print("WPS: Timeout")
   elseif status == wps.WEP then
-    print("WPS: WEP not supported")
+    -- print("WPS: WEP not supported")
   elseif status == wps.SCAN_ERR then
-    print("WPS: AP not found")
+    -- print("WPS: AP not found")
   else
-    print(status)
+    -- print(status)
   end
 
   wps.disable()
