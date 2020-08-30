@@ -62,6 +62,8 @@ print("Connecting to wifi...")
 local connTick = tmr.create()
 local ledState = gpio.LOW
 
+print("_init start: ", node.heap())
+
 bootLedTick = tmr.create()
 
 bootLedTick:alarm(500, tmr.ALARM_AUTO, function()

@@ -1,8 +1,33 @@
-rgbLedTick = tmr.create()
-relayTick = tmr.create()
-red, green, blue = nil
+local rgbLedTick = tmr.create()
+local relayTick = tmr.create()
+local red, green, blue = nil
 
-function turnAlertOn(params, temporary)
+local function collectQueryStringParams(vars)
+  local _GET = {}
+  if (vars ~= nil) then
+    for k, v in string.gmatch(vars, "(%w+)=(%w+)&*") do
+      _GET[k] = v
+    end
+  end
+
+  return _GET
+end
+
+local function turnAlertOff()
+  local running, _mode = rgbLedTick:state()
+
+  print("httpserver turnAlertOff: ", node.heap())
+
+  if running then
+    rgbLedTick:stop()
+    ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+    -- pwm.setduty(rRgbLedPin, 1023)
+    -- pwm.setduty(gRgbLedPin, 1023)
+    -- pwm.setduty(bRgbLedPin, 1023)
+  end
+end
+
+local function turnAlertOn(params, temporary)
   local ledState = gpio.LOW
   local count = 0
   local running, _mode = rgbLedTick:state()
@@ -11,11 +36,13 @@ function turnAlertOn(params, temporary)
   green = tonumber(params.g255)
   blue = tonumber(params.b255)
 
-  print("Red: " .. red)
-  print("Green: " .. green)
-  print("Blue: " .. blue)
+  -- print("Red: " .. red)
+  -- print("Green: " .. green)
+  -- print("Blue: " .. blue)
 
   if not running then
+    print("httpserver turnAlertOn: ", node.heap())
+
     rgbLedTick:alarm(500, tmr.ALARM_AUTO, function()
       if temporary and count > 6 then
         turnAlertOff()
@@ -48,18 +75,6 @@ function turnAlertOn(params, temporary)
   end
 end
 
-function turnAlertOff()
-  local running, _mode = rgbLedTick:state()
-
-  if running then
-    rgbLedTick:stop()
-    ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-    -- pwm.setduty(rRgbLedPin, 1023)
-    -- pwm.setduty(gRgbLedPin, 1023)
-    -- pwm.setduty(bRgbLedPin, 1023)
-  end
-end
-
 local function flashLight(mode, ledState)
   if ledState == gpio.LOW then
     if mode == "alarm" then
@@ -84,8 +99,10 @@ local function flashLight(mode, ledState)
   end
 end
 
-function turnRelayOn(vars)
-  print("Turning on gpio 2..")
+local function turnRelayOn(vars)
+  -- print("Turning on gpio 2..")
+
+  print("httpserver turnRelayOn: ", node.heap())
 
   local params = collectQueryStringParams(vars)
   local times = tonumber((params.delay) or 5000) * 2 / 1000
@@ -104,12 +121,12 @@ function turnRelayOn(vars)
 
         flashLight(params.mode, ledState)
       else
-        print("Turning off gpio 2..")
+        -- print("Turning off gpio 2..")
         relayTick:stop()
         -- ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
         gpio.write(relayPin, gpio.LOW)
 
-        print("alert " .. params.alert)
+        -- print("alert " .. params.alert)
 
         if params.alert == "true" then
           turnAlertOn(params, false)
@@ -121,28 +138,20 @@ function turnRelayOn(vars)
   end
 end
 
-function softReset()
+local function softReset()
   tmr.create():alarm(1000, tmr.ALARM_SINGLE, function()
     node.restart()
   end)
 end
 
-function collectQueryStringParams(vars)
-  local _GET = {}
-  if (vars ~= nil) then
-    for k, v in string.gmatch(vars, "(%w+)=(%w+)&*") do
-      _GET[k] = v
-    end
-  end
+local srv = net.createServer(net.TCP)
 
-  return _GET
-end
-
-srv=net.createServer(net.TCP)
 srv:listen(80, function(conn)
   local method=""
   local url=""
   local vars=""
+
+  print("httpserver start: ", node.heap())
 
   conn:on("receive", function(conn, payload)
     _, _, method, url, vars = string.find(payload, "([A-Z]+) /([^?]*)%??(.*) HTTP")
