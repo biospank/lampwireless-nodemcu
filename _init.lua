@@ -106,7 +106,7 @@ connTick:alarm(500, tmr.ALARM_AUTO, function()
   if wifi.sta.getip() == nil then
     cnt = cnt + 1
     print(cnt .. " attempt...") -- waiting for ip
-    if cnt == 20 then
+    if cnt == 30 then
       connTick:stop()
       print("Entering wps setup...")
       dofile("wpssetup.lc")

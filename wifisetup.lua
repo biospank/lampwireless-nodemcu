@@ -22,7 +22,6 @@ local function activateWifiLed(active)
 end
 
 activateWifiLed(true)
-bootLedTick:start()
 
 -- print("wifisetup start: ", node.heap())
 
