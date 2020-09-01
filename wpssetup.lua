@@ -16,7 +16,6 @@ local function activateWpsLed(active)
 end
 
 wifi.setmode(wifi.STATION)
--- bootLedTick:stop()
 activateWpsLed(true)
 wps.enable()
 
@@ -50,6 +49,7 @@ wps.start(function(status)
 
         fileSystem.dumpSettings("config.net", configs)
 
+        bootLedTick:stop()
         gpio.write(greenLedPin, gpio.LOW)
         activateWpsLed(false)
 
