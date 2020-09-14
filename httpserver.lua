@@ -57,7 +57,7 @@ local function turnAlertOn(params, temporary)
       end
 
       if ledState == gpio.HIGH then
-        ws2812.write(string.char(green, red, blue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+        ws2812.write(string.char(green, red, blue, green, red, blue, green, red, blue, green, red, blue, green, red, blue, green, red, blue, green, red, blue))
         -- pwm.setduty(rRgbLedPin, 1023 - red)
         -- pwm.setduty(gRgbLedPin, 1023 - green)
         -- pwm.setduty(bRgbLedPin, 1023 - blue)
