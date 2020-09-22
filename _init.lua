@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,wps,ws2812,ws2812_effects
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,wps,ws2812
 
 --init.lua
 firmwareVersion = "1.0.0"
@@ -6,27 +6,17 @@ rRgbLedPin = 5
 gRgbLedPin = 1
 bRgbLedPin = 2
 greenLedPin = 7
-buttonPin = 3
+touchPin = 8
 relayPin = 6
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
-gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
+gpio.mode(touchPin, gpio.INT)
 gpio.mode(relayPin, gpio.OUTPUT)
--- pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
--- pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
--- pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
--- pwm.start(rRgbLedPin)
--- pwm.start(gRgbLedPin)
--- pwm.start(bRgbLedPin)
 
--- ws2812 library (remove pwm library)
 ws2812.init(ws2812.MODE_SINGLE) -- pin data D4
 -- turn off leds
 ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
-strip_buffer = ws2812.newBuffer(7, 3)
-ws2812_effects.init(strip_buffer)
-
 wifi.setmode(wifi.STATION)
 
 fileSystem = dofile("fs.lc")
@@ -58,28 +48,35 @@ else
 end
 
 -- wifi.sta.connect()
+
+local tsp = 0;
 
 -- define a callback function
-function debounce ()
-  -- print('button pin state before alarm '..gpio.read(buttonPin))
+function touch(level, stamp)
+  -- print('touch '..gpio.read(touchPin))
+  print('level:', level)       -- print level of on pin
+  print('stamp:', stamp) -- print timestamp while interrupt occur
 
-  tmr.create():alarm(5000, tmr.ALARM_SINGLE, function()
-    -- print('button pin state '..gpio.read(buttonPin))
-    if gpio.read(buttonPin) == 0 then
-      -- print('Button has been pressed for 5s')
-      -- print("Resetting device...")
+  if (level == 1) then
+    tsp = stamp
+  else
+    local diff = stamp - tsp
+
+    if (diff >= 5000000) then
+      print('diff:', diff) -- print timestamp while interrupt occur
+      print("Resetting device...")
       wifi.sta.clearconfig()
       fileSystem.clearSettings("config.net")
 
       tmr.delay(1000)
       node.restart()
     end
-  end)
+  end
 end
 
--- register a button event
--- that means, what's registered here is executed upon button event "down"
-gpio.trig(buttonPin, "down", debounce)
+-- register a touch event
+-- ttp223 touch sersor react on "both" events
+gpio.trig(touchPin, "both", touch)
 
 print("Connecting to wifi...")
 
