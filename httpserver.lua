@@ -21,9 +21,6 @@ local function turnAlertOff()
   if running then
     rgbLedTick:stop()
     ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-    -- pwm.setduty(rRgbLedPin, 1023)
-    -- pwm.setduty(gRgbLedPin, 1023)
-    -- pwm.setduty(bRgbLedPin, 1023)
   end
 end
 
@@ -58,14 +55,8 @@ local function turnAlertOn(params, temporary)
 
       if ledState == gpio.HIGH then
         ws2812.write(string.char(green, red, blue, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-        -- pwm.setduty(rRgbLedPin, 1023 - red)
-        -- pwm.setduty(gRgbLedPin, 1023 - green)
-        -- pwm.setduty(bRgbLedPin, 1023 - blue)
       else
         ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-        -- pwm.setduty(rRgbLedPin, 1023)
-        -- pwm.setduty(gRgbLedPin, 1023)
-        -- pwm.setduty(bRgbLedPin, 1023)
       end
     end)
   else
@@ -78,23 +69,21 @@ end
 local function flashLight(mode, ledState)
   if ledState == gpio.LOW then
     if mode == "alarm" then
-      gpio.write(relayPin, gpio.HIGH)
+      ws2812.write(string.char(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255))
       tmr.create():alarm(250, tmr.ALARM_SINGLE, function()
-        gpio.write(relayPin, gpio.LOW)
+        ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
       end)
     else
-      -- ws2812.write(string.char(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255))
-      gpio.write(relayPin, gpio.HIGH)
+      ws2812.write(string.char(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255))
     end
   else
     if mode == "alarm" then
-      gpio.write(relayPin, gpio.HIGH)
+      ws2812.write(string.char(255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255))
       tmr.create():alarm(250, tmr.ALARM_SINGLE, function()
-        gpio.write(relayPin, gpio.LOW)
+        ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
       end)
     else
-      -- ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-      gpio.write(relayPin, gpio.LOW)
+      ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
     end
   end
 end
@@ -123,8 +112,8 @@ local function turnRelayOn(vars)
       else
         -- print("Turning off gpio 2..")
         relayTick:stop()
-        -- ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
-        gpio.write(relayPin, gpio.LOW)
+
+        ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
         -- print("alert " .. params.alert)
 

@@ -1,25 +1,12 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,wps,ws2812,ws2812_effects
+-- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,wps,ws2812
 
 --init.lua
 firmwareVersion = "1.0.0"
-rRgbLedPin = 5
-gRgbLedPin = 1
-bRgbLedPin = 2
 greenLedPin = 7
-buttonPin = 3
-relayPin = 6
 
 gpio.mode(greenLedPin, gpio.OUTPUT)
-gpio.mode(buttonPin, gpio.INT, gpio.PULLUP)
-gpio.mode(relayPin, gpio.OUTPUT)
--- pwm.setup(rRgbLedPin, 1000, 1023) -- we are using 1000Hz
--- pwm.setup(gRgbLedPin, 1000, 1023) -- we are using 1000Hz
--- pwm.setup(bRgbLedPin, 1000, 1023) -- we are using 1000Hz
--- pwm.start(rRgbLedPin)
--- pwm.start(gRgbLedPin)
--- pwm.start(bRgbLedPin)
 
--- ws2812 library (remove pwm library)
+-- ws2812 library
 ws2812.init(ws2812.MODE_SINGLE) -- pin data D4
 -- turn off leds
 ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
@@ -52,10 +39,6 @@ function buttonCb()
   tmr.delay(1000)
   node.restart()
 end
-
--- register a button event
--- that means, what's registered here is executed upon button event "up"
-gpio.trig(buttonPin, "up", buttonCb)
 
 print("Connecting to wifi...")
 
