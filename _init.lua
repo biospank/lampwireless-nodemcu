@@ -1,4 +1,4 @@
--- enduser_setup,file,gpio,mdns,net,node,tmr,uart,wifi,wps,ws2812
+-- enduser_setup,file,gpio,mdns,net,node,softuart,tmr,uart,wifi,wps,ws2812
 
 --init.lua
 firmwareVersion = "1.0.0"
@@ -11,8 +11,22 @@ ws2812.init(ws2812.MODE_SINGLE) -- pin data D4
 -- turn off leds
 ws2812.write(string.char(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
 
-strip_buffer = ws2812.newBuffer(7, 3)
-ws2812_effects.init(strip_buffer)
+-- Create new software UART with baudrate of 2400, D2 as Tx pin and D3 as Rx pin
+s = softuart.setup(2400, 2, 3)
+-- Set callback to run when 10 characters show up in the buffer
+s:on("data", "\r", function(data)
+  if string.match(data, "doorbell") == "doorbell" then
+    print("doorbell")
+  elseif string.match(data, "intercom") == "intercom" then
+    print("intercom")
+  elseif string.match(data, "alarm") == "alarm" then
+    print("alarm")
+  elseif string.match(data, "sos") == "sos" then
+    print("sos")
+  else
+    print(data)
+  end
+end)
 
 wifi.setmode(wifi.STATION)
 
